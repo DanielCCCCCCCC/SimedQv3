@@ -1,40 +1,6 @@
 <template>
-  <div class="row">
-    <h4 class="header-title">Medicamentos y Otros</h4>
-  </div>
-
-  <!-- Vista de tarjetas para pantallas pequeñas -->
-  <div v-if="isMobileView" class="card-container">
-    <div
-      v-for="medicamento in medicamentos"
-      :key="medicamento.codigo"
-      class="medicamento-card"
-    >
-      <h5>{{ medicamento.descripcion }}</h5>
-      <p><strong>Código:</strong> {{ medicamento.codigo }}</p>
-      <p><strong>Tipo:</strong> {{ medicamento.tipo }}</p>
-      <p><strong>Precio Costo:</strong> {{ medicamento.precioCosto }}</p>
-      <p><strong>Precio Venta:</strong> {{ medicamento.precioVenta }}</p>
-      <p><strong>Status:</strong> {{ medicamento.status }}</p>
-      <div class="card-actions">
-        <q-btn
-          icon="edit"
-          label="Editar"
-          color="primary"
-          @click="actualizarMedicamento(medicamento)"
-        />
-        <q-btn
-          icon="delete"
-          label="Eliminar"
-          color="negative"
-          @click="eliminarMedicamento(medicamento.codigo)"
-        />
-      </div>
-    </div>
-  </div>
-
-  <!-- DataGrid para pantallas grandes -->
-  <div v-else id="app-container" class="q-mb-xl">
+  <q-card class="q-pa-sm q-mt-md bg-grey-1 rounded shadow-2xl">
+    <!-- DataGrid para medicamentos -->
     <DxDataGrid
       :data-source="medicamentos"
       :allow-column-reordering="true"
@@ -43,126 +9,215 @@
       :row-alternation-enabled="true"
       key-expr="codigo"
     >
-      <!-- Columnas con ordenamiento habilitado -->
-      <DxColumn data-field="codigo" caption="Código" :allow-sorting="true" />
+      <!-- Columnas -->
+      <DxColumn data-field="codigo" caption="Código" />
+      <DxColumn data-field="descripcion" caption="Descripción" />
+      <!-- Columna con lookup para mostrar descripción del tipo -->
       <DxColumn
-        data-field="descripcion"
-        caption="Descripción"
-        :allow-sorting="true"
-      />
-      <DxColumn
-        data-field="tipo"
+        data-field="tipoId"
         caption="Tipo"
-        :allow-sorting="true"
-        :visible="false"
+        :lookup="{
+          dataSource: tiposMedicamentos,
+          valueExpr: 'id',
+          displayExpr: 'descripcion',
+        }"
       />
-      <DxColumn
-        data-field="indicaciones"
-        caption="Indicaciones"
-        :allow-sorting="true"
-        :visible="false"
-      />
-      <DxColumn
-        data-field="precioCosto"
-        caption="Precio Costo"
-        :allow-sorting="true"
-        :visible="false"
-      />
-      <DxColumn
-        data-field="precioVenta"
-        caption="Precio Venta"
-        :allow-sorting="true"
-      />
-      <DxColumn
-        data-field="facturar"
-        caption="Facturar"
-        :allow-sorting="true"
-        :visible="false"
-      />
-      <DxColumn data-field="status" caption="Status" :allow-sorting="true" />
+      <DxColumn data-field="indicaciones" caption="Indicaciones" />
+      <DxColumn data-field="precioCosto" caption="Precio Costo" />
+      <DxColumn data-field="precioVenta" caption="Precio Venta" />
+      <DxColumn data-field="facturar" caption="Facturar" />
+      <DxColumn data-field="status" caption="Status" />
 
       <!-- Botones de acción -->
       <DxColumn type="buttons">
-        <DxButton name="edit" icon="edit" @click="actualizarMedicamento" />
-        <DxButton name="delete" icon="trash" @click="eliminarMedicamento" />
+        <DxButton icon="edit" hint="Editar" @click="abrirFormularioEdicion" />
+        <DxButton icon="trash" hint="Eliminar" @click="eliminarMedicamento" />
       </DxColumn>
-
-      <!-- Configuración de edición y filtros -->
-      <DxEditing
-        mode="popup"
-        :allow-updating="true"
-        :allow-adding="true"
-        :allow-deleting="true"
-        :popup="{
-          title: 'Editar Información del Medicamento',
-          showTitle: true,
-          width: 700,
-          height: 400,
-        }"
-      />
-      <DxPaging :enabled="true" :page-size="10" />
-      <DxFilterRow :visible="true" />
-      <DxHeaderFilter :visible="true" />
     </DxDataGrid>
-  </div>
+
+    <!-- Formulario de edición (ventana modal) -->
+    <q-dialog v-model="mostrarDialogo">
+      <q-card style="min-width: 500px">
+        <q-card-section>
+          <div class="text-h6">Editar Medicamento</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit.prevent="guardarCambios">
+            <q-input
+              v-model="medicamentoSeleccionado.codigo"
+              label="Código"
+              disable
+              outlined
+            />
+            <q-input
+              v-model="medicamentoSeleccionado.descripcion"
+              label="Descripción"
+              required
+              outlined
+            />
+            <!-- Selector de tipo de medicamentos -->
+            <q-select
+              v-model="medicamentoSeleccionado.tipoId"
+              :options="tiposMedicamentos"
+              option-value="id"
+              option-label="descripcion"
+              label="Tipo de medicamentos"
+              outlined
+              dense
+              required
+            />
+            <q-input
+              v-model="medicamentoSeleccionado.indicaciones"
+              label="Indicaciones"
+              type="textarea"
+              outlined
+            />
+            <q-input
+              v-model="medicamentoSeleccionado.precioCosto"
+              label="Precio Costo"
+              type="number"
+              outlined
+            />
+            <q-input
+              v-model="medicamentoSeleccionado.precioVenta"
+              label="Precio Venta"
+              type="number"
+              outlined
+            />
+            <q-checkbox
+              v-model="medicamentoSeleccionado.facturar"
+              label="Facturar"
+              outlined
+            />
+            <q-select
+              v-model="medicamentoSeleccionado.status"
+              :options="statusOptions"
+              label="Status"
+              outlined
+              dense
+            />
+            <div class="q-mt-md">
+              <q-btn label="Guardar" color="primary" type="submit" />
+              <q-btn
+                label="Cancelar"
+                color="negative"
+                flat
+                @click="cerrarDialogo"
+              />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+  </q-card>
 </template>
-
 <script setup>
-import {
-  DxDataGrid,
-  DxColumn,
-  DxPaging,
-  DxFilterRow,
-  DxHeaderFilter,
-  DxEditing,
-  DxButton,
-} from "devextreme-vue/data-grid";
+import { DxDataGrid, DxColumn, DxButton } from "devextreme-vue/data-grid";
 import { useMedicamentoStore } from "../stores/DirectoriosStores";
+import { useTiposMedicamentosStore } from "../stores/ConfiMedicasStores";
 import { storeToRefs } from "pinia";
-import { onMounted, computed } from "vue";
 import { Notify } from "quasar";
+import { ref, onMounted } from "vue";
 
+// Acceder a las tiendas
 const medicamentoStore = useMedicamentoStore();
-const { medicamentos } = storeToRefs(medicamentoStore);
+const tiposMedicamentosStore = useTiposMedicamentosStore();
 
-// Detecta si la pantalla es pequeña para mostrar la vista de tarjetas
-const isMobileView = computed(() => window.innerWidth < 600);
+// Datos de las tiendas
+const { medicamentos, medicamentoSeleccionado } = storeToRefs(medicamentoStore);
+const { medicamentos: tiposMedicamentos } = storeToRefs(tiposMedicamentosStore);
 
+// Opciones para el campo "Status"
+const statusOptions = [
+  { label: "Disponible", value: "disponible" },
+  { label: "No disponible", value: "no_disponible" },
+  { label: "Pendiente", value: "pendiente" },
+];
+
+// Estado para el modal
+const mostrarDialogo = ref(false);
+
+// Cargar datos al montar el componente
 onMounted(async () => {
-  await medicamentoStore.cargarMedicamentos();
+  await Promise.all([
+    medicamentoStore.cargarMedicamentos(),
+    tiposMedicamentosStore.cargarMedicamentos(),
+  ]);
 });
 
-// Función para actualizar medicamento
-const actualizarMedicamento = (medicamento) => {
-  medicamentoStore.actualizarMedicamento(medicamento).then(() => {
+// Abrir el formulario de edición
+const abrirFormularioEdicion = (e) => {
+  const medicamento = e.row.data;
+
+  // Busca el tipo completo basado en el tipoId
+  const tipoEncontrado = tiposMedicamentos.value.find(
+    (tipo) => tipo.id === medicamento.tipoId
+  );
+
+  medicamentoSeleccionado.value = {
+    ...medicamento,
+    tipoId: tipoEncontrado || medicamento.tipoId, // Asigna el objeto del tipo si lo encuentra
+  };
+
+  mostrarDialogo.value = true;
+};
+
+// Guardar los cambios del formulario
+const guardarCambios = async () => {
+  try {
+    // Convierte el tipo seleccionado de vuelta a su ID
+    const tipoId =
+      typeof medicamentoSeleccionado.value.tipoId === "object"
+        ? medicamentoSeleccionado.value.tipoId.id
+        : medicamentoSeleccionado.value.tipoId;
+
+    medicamentoSeleccionado.value.tipoId = tipoId;
+
+    await medicamentoStore.actualizarMedicamento(medicamentoSeleccionado.value);
     Notify.create({
       type: "positive",
       message: "Medicamento actualizado con éxito",
       position: "top-right",
     });
-  });
+    cerrarDialogo();
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al actualizar el medicamento",
+      position: "top-right",
+    });
+    console.error("Error al guardar cambios:", error);
+  }
 };
 
-// Función para eliminar medicamento
-const eliminarMedicamento = (medicamentoCodigo) => {
-  medicamentoStore.eliminarMedicamento(medicamentoCodigo).then(() => {
+// Cerrar el modal
+const cerrarDialogo = () => {
+  mostrarDialogo.value = false;
+  medicamentoStore.setMedicamentoSeleccionado(null);
+};
+
+// Eliminar medicamento
+const eliminarMedicamento = async (e) => {
+  try {
+    await medicamentoStore.eliminarMedicamento(e.row.data.id);
     Notify.create({
       type: "negative",
       message: "Medicamento eliminado",
       position: "top-right",
     });
-  });
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al eliminar el medicamento",
+      position: "top-right",
+    });
+    console.error("Error al eliminar medicamento:", error);
+  }
 };
 </script>
 
 <style scoped>
-#app-container {
-  padding: 0 4px;
-  background-color: #ffffff;
-  width: 100%;
-  margin-bottom: -1px;
-}
-
 .custom-data-grid {
   background-color: #ffffff;
   border-radius: 8px;
@@ -170,37 +225,7 @@ const eliminarMedicamento = (medicamentoCodigo) => {
   width: 100%;
 }
 
-.header-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  text-align: center;
-}
-
-/* Estilos de tarjeta para vista móvil */
-.card-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-
-.medicamento-card {
-  border: 1px solid #ddd;
-  padding: 16px;
-  border-radius: 8px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.medicamento-card h5 {
-  margin: 0 0 8px;
-  font-size: 1.2em;
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
+.q-card {
+  margin: auto;
 }
 </style>

@@ -2,11 +2,11 @@
   <div class="scheduler-container">
     <CitasAgendadas />
   </div>
-  <div>
+  <!-- <div>
     <q-btn label="Seleccionar Paciente" @click="openPatientModal" />
     <span v-if="selectedPatient">{{ selectedPatient }}</span>
     <span v-else>No seleccionado</span>
-  </div>
+  </div> -->
 
   <div class="scheduler-container">
     <DxScheduler
@@ -69,6 +69,7 @@
 
 <script setup>
 import { DxScheduler, DxView } from "devextreme-vue/scheduler";
+
 import { useAppointmentsStore } from "../stores/AppointmentsStore";
 import { useMedicoStore } from "../stores/MedicoStores";
 import { useTiposCitasStore } from "src/stores/ConfiMedicasStores";

@@ -1,4 +1,4 @@
-<!-- Componente Padre -->
+<!-- FormMedicos.vue -->
 <template>
   <q-page class="q-pa-md flex flex-center">
     <q-form
@@ -39,7 +39,7 @@
             :error-message="formErrors.direccion"
           />
           <q-select
-            v-model="formData.especialidadesIdSeleccionadas"
+            v-model="formData.especialidadId"
             :options="especialidades"
             label="Especialidad"
             option-value="id"
@@ -48,6 +48,8 @@
             outlined
             dense
             style="font-size: 14px; height: auto"
+            :error="!!formErrors.especialidadId"
+            :error-message="formErrors.especialidadId"
           />
         </div>
       </div>
@@ -68,7 +70,7 @@
         <div class="col-12 col-md-6">
           <q-input
             v-model="formData.telefonoCasa"
-            label="Telefono Casa"
+            label="Teléfono Casa"
             outlined
             mask="####-####"
             dense
@@ -119,15 +121,15 @@ import { storeToRefs } from "pinia";
 
 const $q = useQuasar();
 const medicoStore = useMedicoStore();
-const EspecialidadMedicaStore = useEspecialidadMedicaStore();
+const especialidadMedicaStore = useEspecialidadMedicaStore();
 
-const { especialidades } = storeToRefs(EspecialidadMedicaStore);
+const { especialidades } = storeToRefs(especialidadMedicaStore);
 
 // Datos del formulario
 const formData = ref({
   nombre: "",
   direccion: "",
-  especialidadesIdSeleccionadas: null,
+  especialidadId: null, // Almacena solo el ID numérico
   telefonoPersonal: "",
   telefonoCasa: "",
   email: "",
@@ -137,27 +139,47 @@ const isEditing = ref(false);
 let selectedMedicoId = null;
 
 onMounted(async () => {
-  await EspecialidadMedicaStore.cargarEspecialidades();
+  await especialidadMedicaStore.cargarEspecialidades();
+  console.log("Especialidades cargadas:", especialidades.value);
 });
 
-// Función para cargar los datos del médico seleccionado en el formulario
+// Cargar médico para editar
 function cargarMedicoParaEditar(medico) {
   console.log("Datos del médico recibidos para edición:", medico);
 
-  // Encontrar la descripción de la especialidad
-  const especialidad = (especialidades.value || []).find(
-    (esp) => esp.id === Number(medico.especialidadId)
+  // Convertir especialidadId a número
+  const especialidadIdNumerico = Number(medico.especialidadId);
+
+  // Encontrar la especialidad completa
+  const especialidad = especialidades.value.find(
+    (esp) => esp.id === especialidadIdNumerico
   );
-  formData.value = {
-    ...medico,
-    especialidadesIdSeleccionadas: especialidad
-      ? { id: especialidad.id, descripcion: especialidad.descripcion }
-      : null,
-  };
 
-  console.log("Datos del formulario con especialidad cargada:", formData.value);
+  if (!especialidad) {
+    console.warn(
+      `La especialidad con ID ${medico.especialidadId} no se encontró.`
+    );
+    $q.notify({
+      type: "warning",
+      message:
+        "La especialidad asociada al médico no se encontró. Por favor, selecciona una especialidad válida.",
+      position: "top-right",
+    });
+    // Asignar null o un valor predeterminado si la especialidad no existe
+    formData.value.especialidadId = null;
+  } else {
+    // Asignar solo el ID de la especialidad
+    formData.value.especialidadId = especialidad.id;
+  }
 
-  selectedMedicoId = medico.id;
+  // Asignar otros campos del formulario
+  formData.value.nombre = medico.nombre || "";
+  formData.value.direccion = medico.direccion || "";
+  formData.value.telefonoPersonal = medico.telefonoPersonal || "";
+  formData.value.telefonoCasa = medico.telefonoCasa || "";
+  formData.value.email = medico.email || "";
+
+  selectedMedicoId = medico.id || null;
   isEditing.value = true;
 }
 
@@ -166,7 +188,7 @@ async function guardarMedico() {
   const medicoData = {
     nombre: formData.value.nombre,
     direccion: formData.value.direccion,
-    especialidadId: formData.value.especialidadesIdSeleccionadas?.id,
+    especialidadId: formData.value.especialidadId.id, // Asignar directamente el ID numérico
     telefonoCasa: formData.value.telefonoCasa,
     telefonoPersonal: formData.value.telefonoPersonal,
     email: formData.value.email,
@@ -178,7 +200,7 @@ async function guardarMedico() {
         id: selectedMedicoId,
         ...medicoData,
       });
-      console.log("Actualizado médico con exito:", medicoData);
+      console.log("Actualizado médico con éxito:", medicoData);
       $q.notify({
         type: "positive",
         message: "Médico actualizado exitosamente",
@@ -209,7 +231,7 @@ function resetFormulario() {
   formData.value = {
     nombre: "",
     direccion: "",
-    especialidadesIdSeleccionadas: null,
+    especialidadId: null, // Asignar el ID numérico o null
     telefonoPersonal: "",
     telefonoCasa: "",
     email: "",

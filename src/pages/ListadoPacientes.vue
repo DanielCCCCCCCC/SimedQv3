@@ -1,9 +1,10 @@
+<!-- ListadoPacientes.vue -->
 <template>
   <div class="view-wrapper list-page view-wrapper-paciente-list">
     <!-- Vista de tarjetas para dispositivos móviles -->
     <div v-if="isMobileView" class="card-container">
       <div
-        v-for="paciente in formIdentificacion"
+        v-for="paciente in pacientesConDetalles"
         :key="paciente.id"
         class="paciente-card"
         @click="openPanel(paciente)"
@@ -20,7 +21,7 @@
     <div v-else>
       <DxDataGrid
         ref="dataGrid"
-        :data-source="formIdentificacion"
+        :data-source="pacientesConDetalles"
         :allow-column-reordering="true"
         :row-alternation-enabled="true"
         :focused-row-enabled="true"
@@ -61,7 +62,12 @@
           :min-width="100"
           :visible="true"
         />
-        <DxColumn data-field="medicoNombre" caption="Médico" :min-width="120" />
+        <DxColumn
+          data-field="medicoNombre"
+          caption="Médico"
+          :min-width="120"
+          :visible="true"
+        />
         <DxColumn
           data-field="codigo"
           caption="Código"
@@ -91,14 +97,21 @@
           data-field="tipoDescripcion"
           caption="Tipo"
           :min-width="120"
+          :visible="true"
         />
-        <DxColumn data-field="dni" caption="DNI" :min-width="120" />
+        <DxColumn
+          data-field="dni"
+          caption="DNI"
+          :min-width="120"
+          :visible="true"
+        />
         <DxColumn
           data-field="activo"
           caption="Activo"
           data-type="boolean"
           :min-width="80"
           :width="90"
+          :visible="true"
         >
           <template #cell="{ data }">
             <DxCheckBox
@@ -141,8 +154,12 @@ import {
 } from "devextreme-vue/data-grid";
 import DxCheckBox from "devextreme-vue/check-box";
 import { useFichaIdentificacionStore } from "../stores/fichaIdentificacionStores";
-import { ref, onMounted, computed, onUnmounted } from "vue";
+import { useTiposPacientesStore } from "../stores/ConfiMedicasStores";
+import { useMedicoStore } from "../stores/MedicoStores";
+
+import { ref, onMounted, computed, onUnmounted, watch } from "vue";
 import { storeToRefs } from "pinia";
+
 import PacientePanel from "./PacientePanel.vue";
 import { Notify } from "quasar";
 const emit = defineEmits(["cambiar-tab"]);
@@ -150,6 +167,52 @@ const emit = defineEmits(["cambiar-tab"]);
 const fichaIdentificacionStore = useFichaIdentificacionStore();
 const { formIdentificacion } = storeToRefs(fichaIdentificacionStore);
 
+const TiposPacientesStore = useTiposPacientesStore();
+const MedicoStore = useMedicoStore();
+const { tpacientes } = storeToRefs(TiposPacientesStore);
+const { medicos } = storeToRefs(MedicoStore);
+
+// Renderers personalizados para las columnas
+
+onMounted(async () => {
+  await MedicoStore.cargarMedicos();
+  await TiposPacientesStore.cargarPacientes(); // Asegúrate de tener este método en tu store
+  await fichaIdentificacionStore.cargarDatos();
+  console.log("Médicos cargados:", medicos.value); // Verifica que los médicos están cargados
+  console.log("Tipos de pacientes cargados:", tpacientes.value); // Verifica que los tipos de pacientes están cargados
+});
+
+const pacientesConDetalles = computed(() => {
+  return (formIdentificacion.value || []).map((paciente) => {
+    // Buscar el médico correspondiente
+    const medico = (medicos.value || []).find(
+      (medic) => medic.id === Number(paciente.medicoId)
+    );
+
+    // Buscar la descripción del tipo de paciente
+    const tipoPaciente = (tpacientes.value || []).find(
+      (tipo) => tipo.id === Number(paciente.tipoId)
+    );
+
+    return {
+      ...paciente,
+      medicoNombre: medico ? medico.nombre : "Médico no encontrado",
+      tipoDescripcion: tipoPaciente
+        ? tipoPaciente.descripcion
+        : "Tipo no encontrado",
+    };
+  });
+});
+
+watch(
+  () => medicos.value,
+  (newValue) => {
+    console.log("Médicos actualizados:", newValue);
+    // Aquí puedes recargar datos en la tabla si es necesario
+  }
+);
+
+// Responsividad
 const responsiveWidth = ref(window.innerWidth < 600 ? "100%" : "auto");
 const isMobileView = computed(() => window.innerWidth < 600);
 
@@ -179,38 +242,74 @@ const onEditButtonClick = (e) => {
   emit("cambiar-tab", { tab: "FichaIdentificacion", paciente: e.row.data });
 };
 
-const onCheckboxChange = (data) => {
-  fichaIdentificacionStore.updateActivo(data.id, data.activo);
-};
-
-const onDeleteButtonClick = (e) => {
-  fichaIdentificacionStore
-    .eliminarPaciente(e.row.data.id)
-    .then(() => {
+// Método para manejar el clic en el botón de eliminar
+const onDeleteButtonClick = async (e) => {
+  const id = e.row.data.id;
+  try {
+    const success = await fichaIdentificacionStore.eliminarPaciente(id);
+    if (success) {
       Notify.create({
         message: "Paciente eliminado exitosamente",
         color: "positive",
         position: "top-right",
       });
-    })
-    .catch((error) => {
-      console.error("Error al eliminar el paciente:", error);
+    } else {
       Notify.create({
         message: "Error al eliminar el paciente",
         color: "negative",
         position: "top-right",
       });
+    }
+  } catch (error) {
+    console.error("Error al eliminar el paciente:", error);
+    Notify.create({
+      message: "Error al eliminar el paciente",
+      color: "negative",
+      position: "top-right",
     });
+  }
 };
 
+// Método para manejar el clic en una fila
 const rowClick = (e) => {
   focusedRowKey.value = e.key;
   panelData.value = e.data;
   isPanelOpened.value = true;
 };
 
+// Método para cerrar el panel
 const onClose = () => {
   isPanelOpened.value = false;
+};
+
+// Método para manejar cambios en el checkbox "activo"
+const onCheckboxChange = async (data) => {
+  try {
+    const success = await fichaIdentificacionStore.actualizarPaciente({
+      id: data.id,
+      activo: data.activo,
+    });
+    if (success) {
+      Notify.create({
+        message: "Estado del paciente actualizado",
+        color: "positive",
+        position: "top-right",
+      });
+    } else {
+      Notify.create({
+        message: "Error al actualizar el estado del paciente",
+        color: "negative",
+        position: "top-right",
+      });
+    }
+  } catch (error) {
+    console.error("Error al actualizar el estado del paciente:", error);
+    Notify.create({
+      message: "Error al actualizar el estado del paciente",
+      color: "negative",
+      position: "top-right",
+    });
+  }
 };
 </script>
 

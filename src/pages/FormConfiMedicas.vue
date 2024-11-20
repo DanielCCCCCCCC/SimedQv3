@@ -4,6 +4,7 @@
     <q-tabs
       v-model="tab"
       class="bg-white text-black q-mb-sm shadow-2 rounded-borders small-tabs"
+      @update:model-value="onTabChange"
     >
       <q-tab
         name="Especialidades Médicas"
@@ -256,9 +257,9 @@
     </q-tab-panels>
   </q-page>
 </template>
-
 <script setup>
-import { ref } from "vue";
+import { ref, watch, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { Notify } from "quasar";
 import ListadoEspecialidadesMedicas from "./ListadoEspecialidadesMedicas.vue";
 import ListadoTiposEstudios from "./ListadoTiposEstudios.vue";
@@ -267,16 +268,63 @@ import ListadoTipoPacientes from "./ListadoTipoPacientes.vue";
 import ListadoGruposContactos from "./ListadoGruposContactos.vue";
 import ListadoTiposCitas from "./ListadoTiposCitas.vue";
 
-// Estado para las pestañas activas
+// Importar las stores necesarias
+import {
+  useEspecialidadMedicaStore,
+  useTiposEstudiosStore,
+  useTiposMedicamentosStore,
+  useTiposPacientesStore,
+  useGruposContactosStore,
+  useTiposCitasStore,
+} from "../stores/ConfiMedicasStores";
+
+// Acceder a la ruta y al router
+const route = useRoute();
+const router = useRouter();
+
+// Definir las pestañas disponibles
+const pestañasDisponibles = [
+  "Especialidades Médicas",
+  "Tipos de Estudios",
+  "Tipos de Medicamentos",
+  "Tipos de Pacientes",
+  "Grupos de Contactos",
+  "Tipos de Citas",
+];
+
+// Inicializar la pestaña activa desde el parámetro de consulta o por defecto
 const tab = ref("Especialidades Médicas");
 
-// Función de validación genérica
-const validarCampo = (data, campo) => {
-  return data[campo].trim() ? "" : `El campo ${campo} es obligatorio.`;
+const inicializarTab = () => {
+  const tabQuery = route.query.tab;
+  if (tabQuery && pestañasDisponibles.includes(tabQuery)) {
+    tab.value = tabQuery;
+  }
 };
 
-// Especialidades Médicas
-import { useEspecialidadMedicaStore } from "../stores/ConfiMedicasStores";
+// Llamar a la función al montar el componente
+onMounted(() => {
+  inicializarTab();
+});
+
+// Función para manejar el cambio de pestaña y actualizar la URL
+const onTabChange = (nuevaTab) => {
+  router.replace({ query: { ...route.query, tab: nuevaTab } });
+};
+
+// Observar cambios en la ruta para actualizar la pestaña si la URL cambia
+watch(
+  () => route.query.tab,
+  (nuevaTab) => {
+    if (nuevaTab && pestañasDisponibles.includes(nuevaTab)) {
+      tab.value = nuevaTab;
+    }
+  }
+);
+
+// Estado y funciones para cada sección
+
+// 1. Especialidades Médicas
 const especialidadData = ref({ descripcion: "" });
 const especialidadStore = useEspecialidadMedicaStore();
 
@@ -306,8 +354,7 @@ const eliminarEspecialidad = async () => {
   });
 };
 
-// Tipos de Estudios
-import { useTiposEstudiosStore } from "../stores/ConfiMedicasStores";
+// 2. Tipos de Estudios
 const estudioData = ref({ descripcion: "" });
 const tiposEstudiosStore = useTiposEstudiosStore();
 
@@ -335,8 +382,7 @@ const eliminarEstudio = async () => {
   });
 };
 
-// Tipos de Medicamentos
-import { useTiposMedicamentosStore } from "../stores/ConfiMedicasStores";
+// 3. Tipos de Medicamentos
 const medicamentoData = ref({ descripcion: "" });
 const tiposMedicamentosStore = useTiposMedicamentosStore();
 
@@ -366,8 +412,7 @@ const eliminarMedicamento = async () => {
   });
 };
 
-// Tipos de Pacientes
-import { useTiposPacientesStore } from "../stores/ConfiMedicasStores";
+// 4. Tipos de Pacientes
 const pacienteData = ref({ descripcion: "" });
 const tiposPacientesStore = useTiposPacientesStore();
 
@@ -395,8 +440,7 @@ const eliminarPaciente = async () => {
   });
 };
 
-// Grupos de Contactos
-import { useGruposContactosStore } from "../stores/ConfiMedicasStores";
+// 5. Grupos de Contactos
 const grupoContactoData = ref({ descripcion: "" });
 const gruposContactosStore = useGruposContactosStore();
 
@@ -424,9 +468,7 @@ const eliminarGrupoContacto = async () => {
   });
 };
 
-// Tipos de Citas
-import { useTiposCitasStore } from "../stores/ConfiMedicasStores";
-// import ListadoTiposEstudios from "./ListadoTiposEstudios.vue";
+// 6. Tipos de Citas
 const citaData = ref({ descripcion: "" });
 const tiposCitasStore = useTiposCitasStore();
 
@@ -452,6 +494,11 @@ const eliminarCita = async () => {
     color: "warning",
     position: "top-right",
   });
+};
+
+// Función de validación genérica
+const validarCampo = (data, campo) => {
+  return data[campo].trim() ? "" : `El campo ${campo} es obligatorio.`;
 };
 </script>
 

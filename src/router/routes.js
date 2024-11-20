@@ -5,7 +5,7 @@ import FormConfiMedicas from "src/pages/FormConfiMedicas.vue";
 import FormDirectorios from "src/pages/FormDirectorios.vue";
 import FormDirectorioPacientes from "src/pages/FormDirectorioPacientes.vue";
 import SchedulerControlCita from "src/pages/SchedulerControlCita.vue";
-import SchedulerControlCitaCopy from "src/pages/SchedulerControlCita copy.vue";
+import SchedulerControlCitaCopy from "src/pages/SchedulerControlCitaCopy.vue";
 import FormDatosGenerales from "src/pages/FormDatosGenerales.vue";
 import FormMedicos from "src/pages/FormMedicos.vue";
 const routes = [

@@ -9,7 +9,7 @@
     >
       <h5>{{ medico.nombre }}</h5>
       <p><strong>Especialidad:</strong> {{ medico.especialidadDescripcion }}</p>
-      <p><strong>Celular:</strong> {{ medico.telefonoCasa }}</p>
+      <p><strong>Teléfono Casa:</strong> {{ medico.telefonoCasa }}</p>
       <p><strong>Email:</strong> {{ medico.email }}</p>
       <div class="card-actions">
         <q-btn
@@ -18,7 +18,12 @@
           color="primary"
           @click="$emit('editarMedico', medico)"
         />
-        <q-btn icon="delete" label="Eliminar" color="negative" />
+        <q-btn
+          icon="delete"
+          label="Eliminar"
+          color="negative"
+          @click="handleDelete(medico.id)"
+        />
       </div>
     </div>
   </div>
@@ -35,7 +40,7 @@
       :column-min-width="50"
       :width="responsiveWidth"
     >
-      <DxColumn data-field="id" caption="ID Medico" :allow-sorting="true" />
+      <DxColumn data-field="id" caption="ID Médico" :allow-sorting="true" />
       <DxColumn
         data-field="nombre"
         caption="Nombre Completo"
@@ -43,15 +48,10 @@
       />
       <DxColumn
         data-field="direccion"
-        caption="Direccion"
-        :allow-sorting="true"
-      />
-      <DxColumn
-        data-field="direccion"
         caption="Dirección"
         :allow-sorting="true"
-        :visible="false"
       />
+
       <DxColumn
         data-field="especialidadDescripcion"
         caption="Especialidad"
@@ -102,7 +102,11 @@
             }
           "
         />
-        <DxButton name="delete" icon="trash" />
+        <DxButton
+          name="delete"
+          icon="trash"
+          @click="(e) => handleDelete(e.row.data.id)"
+        />
       </DxColumn>
     </DxDataGrid>
   </div>
@@ -130,8 +134,6 @@ const EspecialidadMedicaStore = useEspecialidadMedicaStore();
 
 const { medicos } = storeToRefs(MedicoStore);
 const { especialidades } = storeToRefs(EspecialidadMedicaStore);
-// const { medicos } = medicoStore;
-// const { especialidades } = especialidadStore;
 
 // Detecta si es vista móvil
 const isMobileView = computed(() => window.innerWidth < 600);
@@ -141,7 +143,7 @@ onMounted(async () => {
   try {
     await EspecialidadMedicaStore.cargarEspecialidades();
     await MedicoStore.cargarMedicos();
-    console.log("Medicos cargados:", medicos.value);
+    console.log("Médicos cargados:", medicos.value);
     console.log("Especialidades cargadas:", especialidades.value);
   } catch (error) {
     console.error("Error al cargar datos:", error);
@@ -152,7 +154,7 @@ onMounted(async () => {
 const medicosConEspecialidad = computed(() => {
   return (medicos.value || []).map((medico) => {
     const especialidad = (especialidades.value || []).find(
-      (esp) => esp.id === Number(medico.especialidadId)
+      (esp) => esp.id === medico.especialidadId // ya es número
     );
     return {
       ...medico,
@@ -165,40 +167,33 @@ const medicosConEspecialidad = computed(() => {
 
 // Verifica el estado de los datos
 watchEffect(() => {
-  console.log("Medicos:", medicos.value);
+  console.log("Médicos:", medicos.value);
   console.log("Especialidades:", especialidades.value);
-  console.log("Medicos con Especialidad:", medicosConEspecialidad.value);
+  console.log("Médicos con Especialidad:", medicosConEspecialidad.value);
 });
 
-// Función para abrir el modal de edición con el médico seleccionado
-// const onEditButtonClick = (medico) => {
-//   selectedMedico.value = { ...medico };
-//   isModalOpen.value = true;
-// };
-
-// Función para actualizar el médico
-const updateMedico = async () => {
+// Manejar eliminación de médico
+const handleDelete = async (medicoId) => {
   try {
-    const success = await medicoStore.actualizarMedico(selectedMedico.value);
+    const success = await MedicoStore.eliminarMedico(medicoId);
     if (success) {
       Notify.create({
-        message: "Médico actualizado exitosamente",
-        color: "positive",
+        message: "Médico eliminado exitosamente",
+        color: "green",
         position: "top-right",
       });
-      isModalOpen.value = false;
     } else {
       Notify.create({
-        message: "Hubo un error al actualizar el médico",
-        color: "negative",
+        message: "Error al eliminar el médico",
+        color: "red",
         position: "top-right",
       });
     }
   } catch (error) {
-    console.error("Error al actualizar el médico:", error);
+    console.error("Error al eliminar el médico:", error);
     Notify.create({
-      message: "Error al actualizar el médico",
-      color: "negative",
+      message: "Error al eliminar el médico",
+      color: "red",
       position: "top-right",
     });
   }

@@ -273,6 +273,7 @@ import { storeToRefs } from "pinia";
 
 export default {
   name: "PacientePanel",
+  emits: ["close"],
   props: {
     paciente: {
       type: Object,

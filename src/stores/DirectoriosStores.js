@@ -22,8 +22,12 @@ function saveToLocalStorage(key, value) {
 //// Tienda para Hospitales
 export const useHospitalStore = defineStore("hospitalStore", () => {
   const hospitales = ref([]);
-  const tenantId = "a780935f-76e7-46c7-98a3-b4c3ab9bb2c3";
+  const hospitalSeleccionado = ref(null); // Para manejar el hospital que se está editando
 
+  const tenantId = "a780935f-76e7-46c7-98a3-b4c3ab9bb2c3";
+  const setHospitalSeleccionado = (hospital) => {
+    hospitalSeleccionado.value = { ...hospital }; // Clonamos el objeto para evitar mutaciones no deseadas
+  };
   const cargarHospitales = async () => {
     try {
       const { data, error } = await supabase
@@ -43,7 +47,7 @@ export const useHospitalStore = defineStore("hospitalStore", () => {
   };
 
   const agregarHospital = async (hospitalInfo) => {
-    const hospitalConTenant = { ...hospitalInfo, tenant_Id }; // Agrega tenant_Id al crear un hospital
+    const hospitalConTenant = { ...hospitalInfo, tenant_Id: tenantId }; // Agrega tenant_Id al crear un hospital
 
     try {
       const { data, error } = await supabase
@@ -74,7 +78,39 @@ export const useHospitalStore = defineStore("hospitalStore", () => {
     }
   };
 
-  return { hospitales, cargarHospitales, agregarHospital, eliminarHospital };
+  const actualizarHospital = async (hospitalInfo) => {
+    try {
+      const { data, error } = await supabase
+        .from("hospitales")
+        .update(hospitalInfo)
+        .eq("id", hospitalInfo.id);
+
+      if (error) {
+        console.error("Error al actualizar hospital:", error);
+      } else if (data) {
+        // Actualiza la lista local de hospitales
+        const index = hospitales.value.findIndex(
+          (h) => h.id === hospitalInfo.id
+        );
+        if (index !== -1) {
+          hospitales.value[index] = { ...hospitalInfo };
+        }
+        hospitalSeleccionado.value = null; // Limpia el hospital seleccionado después de la edición
+      }
+    } catch (err) {
+      console.error("Error en actualizarHospital:", err.message);
+    }
+  };
+
+  return {
+    hospitales,
+    hospitalSeleccionado,
+    setHospitalSeleccionado,
+    cargarHospitales,
+    agregarHospital,
+    eliminarHospital,
+    actualizarHospital,
+  };
 });
 
 //
@@ -89,6 +125,7 @@ export const useHospitalStore = defineStore("hospitalStore", () => {
 export const useMedicamentoStore = defineStore("medicamentoStore", () => {
   const medicamentos = ref([]);
   const tenantId = "a780935f-76e7-46c7-98a3-b4c3ab9bb2c3";
+  const medicamentoSeleccionado = ref(null); // Estado para el medicamento seleccionado
 
   const cargarMedicamentos = async () => {
     try {
@@ -141,12 +178,40 @@ export const useMedicamentoStore = defineStore("medicamentoStore", () => {
       medicamentos.value = medicamentos.value.filter((m) => m.id !== id);
     }
   };
+  const actualizarMedicamento = async (medicamento) => {
+    try {
+      const { data, error } = await supabase
+        .from("medicamentos")
+        .update(medicamento)
+        .eq("id", medicamento.id);
+      if (error) {
+        console.error("Error al actualizar medicamento:", error);
+      } else if (data) {
+        // Actualiza el estado local
+        const index = medicamentos.value.findIndex(
+          (m) => m.id === medicamento.id
+        );
+        if (index !== -1) {
+          medicamentos.value[index] = { ...medicamento };
+        }
+      }
+    } catch (err) {
+      console.error("Error en actualizarMedicamento:", err.message);
+    }
+  };
+
+  const setMedicamentoSeleccionado = (medicamento) => {
+    medicamentoSeleccionado.value = { ...medicamento }; // Clona el medicamento
+  };
 
   return {
     medicamentos,
+    medicamentoSeleccionado,
     cargarMedicamentos,
     agregarMedicamento,
     eliminarMedicamento,
+    actualizarMedicamento,
+    setMedicamentoSeleccionado,
   };
 });
 

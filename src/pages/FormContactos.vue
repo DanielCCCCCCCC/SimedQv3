@@ -180,6 +180,7 @@ let selectedContactoId = null;
 
 function cargarContactoParaEditar(contacto) {
   console.log("Datos del contacto recibidos para edición:", contacto);
+  // Convertir especialidadId a número
 
   // Encontrar el grupo
   const grupo = grupos.value.find((grp) => grp.id === contacto.grupoIdContacto);
@@ -210,6 +211,7 @@ function cargarContactoParaEditar(contacto) {
     emailContacto: contacto.emailContacto,
     telefonoCasaContacto: contacto.telefonoCasaContacto,
     telefonoPersonalContacto: contacto.telefonoPersonalContacto,
+    observacionContacto: contacto.observacionContacto,
   };
   console.log("Grupo ID en contacto:", contacto.grupoIdContacto);
   console.log("Lista de grupos:", grupos.value);

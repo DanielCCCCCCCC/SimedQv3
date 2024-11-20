@@ -526,11 +526,11 @@ const guardarDatosFormulario = () => {
       codigo: pacienteSeleccionado.codigo,
       activo: pacienteSeleccionado.activo,
       tipoId: pacienteSeleccionado.tipo?.id || null,
-      tipoDescripcion: pacienteSeleccionado.tipo?.descripcion || "",
+      // tipoDescripcion: pacienteSeleccionado.tipo?.descripcion || "",
 
       // Guardar tanto el ID como el nombre del médico
       medicoId: pacienteSeleccionado.medico?.id || null,
-      medicoNombre: pacienteSeleccionado.medico?.nombre || null,
+      // medicoNombre: pacienteSeleccionado.medico?.nombre || null,
 
       dni: pacienteSeleccionado.dni,
       nombres: pacienteSeleccionado.nombres,
@@ -538,29 +538,29 @@ const guardarDatosFormulario = () => {
       fechaNacimiento: pacienteSeleccionado.fechaNacimiento,
       sexo: pacienteSeleccionado.sexo,
       estadoCivilId: pacienteSeleccionado.estadoCivil?.id || null,
-      estadoCivilDescripcion:
-        pacienteSeleccionado.estadoCivil?.descripcion || "",
+      // estadoCivilDescripcion:
+      //   pacienteSeleccionado.estadoCivil?.descripcion || "",
       observaciones: pacienteSeleccionado.observaciones,
       direccion: pacienteSeleccionado.direccion,
       telCasa: pacienteSeleccionado.telCasa,
       telPersonal: pacienteSeleccionado.telPersonal,
       email: pacienteSeleccionado.email,
       departamentoId: pacienteSeleccionado.departamento?.id || null,
-      departamentoDescripcion:
-        pacienteSeleccionado.departamento?.descripcion || "",
+      // departamentoDescripcion:
+      //   pacienteSeleccionado.departamento?.descripcion || "",
       municipioId: pacienteSeleccionado.municipio?.id || null,
-      municipioDescripcion: pacienteSeleccionado.municipio?.descripcion || "",
+      // municipioDescripcion: pacienteSeleccionado.municipio?.descripcion || "",
       organizacion: pacienteSeleccionado.organizacion,
       conyugue: pacienteSeleccionado.conyugue,
       madre: pacienteSeleccionado.madre,
       padre: pacienteSeleccionado.padre,
       escolaridadId: pacienteSeleccionado.escolaridad?.id || null,
-      escolaridadDescripcion:
-        pacienteSeleccionado.escolaridad?.descripcion || "",
+      // escolaridadDescripcion:
+      //   pacienteSeleccionado.escolaridad?.descripcion || "",
       ocupacion: pacienteSeleccionado.ocupacion,
       grupoSanguineoId: pacienteSeleccionado.grupoSanguineo?.id || null,
-      grupoSanguineoDescripcion:
-        pacienteSeleccionado.grupoSanguineo?.descripcion || "",
+      // grupoSanguineoDescripcion:
+      //   pacienteSeleccionado.grupoSanguineo?.descripcion || "",
       alergias: pacienteSeleccionado.alergias,
       vih: pacienteSeleccionado.vih ?? false,
       tenant_id: pacienteSeleccionado.tenant_id,
@@ -572,11 +572,11 @@ const guardarDatosFormulario = () => {
       codigo: pacienteSeleccionado.codigo,
       activo: pacienteSeleccionado.activo,
       tipoId: pacienteSeleccionado.tipo?.id || null,
-      tipoDescripcion: pacienteSeleccionado.tipo?.descripcion || "",
+      // tipoDescripcion: pacienteSeleccionado.tipo?.descripcion || "",
 
       // Guardar tanto el ID como el nombre del médico
       medicoId: pacienteSeleccionado.medico?.id || null,
-      medicoNombre: pacienteSeleccionado.medico?.nombre || null,
+      // medicoNombre: pacienteSeleccionado.medico?.nombre || null,
 
       dni: pacienteSeleccionado.dni,
       nombres: pacienteSeleccionado.nombres,
@@ -584,29 +584,29 @@ const guardarDatosFormulario = () => {
       fechaNacimiento: pacienteSeleccionado.fechaNacimiento,
       sexo: pacienteSeleccionado.sexo,
       estadoCivilId: pacienteSeleccionado.estadoCivil?.id || null,
-      estadoCivilDescripcion:
-        pacienteSeleccionado.estadoCivil?.descripcion || "",
+      // estadoCivilDescripcion:
+      //   pacienteSeleccionado.estadoCivil?.descripcion || "",
       observaciones: pacienteSeleccionado.observaciones,
       direccion: pacienteSeleccionado.direccion,
       telCasa: pacienteSeleccionado.telCasa,
       telPersonal: pacienteSeleccionado.telPersonal,
       email: pacienteSeleccionado.email,
       departamentoId: pacienteSeleccionado.departamento?.id || null,
-      departamentoDescripcion:
-        pacienteSeleccionado.departamento?.descripcion || "",
+      // departamentoDescripcion:
+      //   pacienteSeleccionado.departamento?.descripcion || "",
       municipioId: pacienteSeleccionado.municipio?.id || null,
-      municipioDescripcion: pacienteSeleccionado.municipio?.descripcion || "",
+      // municipioDescripcion: pacienteSeleccionado.municipio?.descripcion || "",
       organizacion: pacienteSeleccionado.organizacion,
       conyugue: pacienteSeleccionado.conyugue,
       madre: pacienteSeleccionado.madre,
       padre: pacienteSeleccionado.padre,
       escolaridadId: pacienteSeleccionado.escolaridad?.id || null,
-      escolaridadDescripcion:
-        pacienteSeleccionado.escolaridad?.descripcion || "",
+      // escolaridadDescripcion:
+      //   pacienteSeleccionado.escolaridad?.descripcion || "",
       ocupacion: pacienteSeleccionado.ocupacion,
       grupoSanguineoId: pacienteSeleccionado.grupoSanguineo?.id || null,
-      grupoSanguineoDescripcion:
-        pacienteSeleccionado.grupoSanguineo?.descripcion || "",
+      // grupoSanguineoDescripcion:
+      //   pacienteSeleccionado.grupoSanguineo?.descripcion || "",
       alergias: pacienteSeleccionado.alergias,
       vih: pacienteSeleccionado.vih ?? false,
       tenant_id: pacienteSeleccionado.tenant_id,

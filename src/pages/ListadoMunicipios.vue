@@ -52,7 +52,6 @@
           @click="toggleExpand"
         />
       </template>
-      <DxExport :enabled="true" :formats="['xlsx', 'pdf']" />
     </DxDataGrid>
   </div>
 </template>
