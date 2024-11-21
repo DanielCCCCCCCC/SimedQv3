@@ -2,7 +2,7 @@
   <q-card class="q-pa-sm q-mt-md bg-grey-1 rounded shadow-2xl">
     <!-- DataGrid -->
     <DxDataGrid
-      :data-source="hospitales"
+      :data-source="contactosConDetalles"
       key-expr="id"
       :show-borders="true"
       class="custom-data-grid"
@@ -18,13 +18,33 @@
       <DxColumn data-field="direccion" caption="Dirección">
         <DxRequiredRule />
       </DxColumn>
+
+      <!-- Departamento Column con Descripción -->
+      <DxColumn
+        data-field="departamentoDescripcion"
+        caption="Departamento"
+        :visible="true"
+      >
+        <DxRequiredRule />
+      </DxColumn>
+      <DxColumn
+        data-field="municipioDescripcion"
+        caption="Municipio"
+        :visible="true"
+      >
+        <DxRequiredRule />
+      </DxColumn>
       <DxColumn data-field="telefono" caption="Teléfono">
         <DxRequiredRule />
       </DxColumn>
-      <DxColumn data-field="email" caption="Correo Electrónico">
+      <DxColumn
+        data-field="email"
+        caption="Correo Electrónico"
+        :visible="false"
+      >
         <DxRequiredRule />
       </DxColumn>
-      <DxColumn data-field="web" caption="Sitio Web" width="200px">
+      <DxColumn data-field="web" caption="Sitio Web" width="120px">
         <DxRequiredRule />
       </DxColumn>
 
@@ -52,6 +72,26 @@
             <q-input
               v-model="hospitalSeleccionado.direccion"
               label="Dirección"
+              required
+            />
+            <q-select
+              v-model="hospitalSeleccionado.departamento_id"
+              :options="departamentos"
+              label="Departamento"
+              option-value="id"
+              option-label="descripcion"
+              emit-value
+              map-options
+              required
+            />
+            <q-select
+              v-model="hospitalSeleccionado.municipio_id"
+              :options="filteredMunicipios"
+              label="Municipio"
+              option-value="id"
+              option-label="descripcion"
+              emit-value
+              map-options
               required
             />
             <q-input
@@ -95,32 +135,91 @@ import {
   DxButton,
 } from "devextreme-vue/data-grid";
 import { useHospitalStore } from "../stores/DirectoriosStores";
+import { useDepartamentoStore } from "src/stores/DatosGeneralesStores";
+import { useMunicipioStore } from "src/stores/DatosGeneralesStores";
 import { storeToRefs } from "pinia";
 import { Notify } from "quasar";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 
-// Acceder a la tienda de hospitales
+// Acceder a las tiendas
 const hospitalStore = useHospitalStore();
+const departamentoStore = useDepartamentoStore();
+const municipioStore = useMunicipioStore();
+
+// Acceder a las propiedades reactivas de las tiendas
 const { hospitales, hospitalSeleccionado } = storeToRefs(hospitalStore);
+const { departamentos } = storeToRefs(departamentoStore);
+const { municipios } = storeToRefs(municipioStore);
 
 // Estado para el modal
 const mostrarDialogo = ref(false);
 
-// Cargar hospitales al montar el componente
-onMounted(() => {
-  hospitalStore.cargarHospitales();
+// Computed para construir contactosConDetalles sin alterar hospitales.value
+const contactosConDetalles = computed(() => {
+  return (hospitales.value || []).map((hospital) => {
+    const departamento = (departamentos.value || []).find(
+      (dept) => dept.id === Number(hospital.departamento_id)
+    );
+    const municipio = (municipios.value || []).find(
+      (mun) => mun.id === Number(hospital.municipio_id)
+    );
+    return {
+      ...hospital,
+      departamentoDescripcion: departamento
+        ? departamento.descripcion
+        : "Departamento no encontrado",
+      municipioDescripcion: municipio
+        ? municipio.descripcion
+        : "Municipio no encontrado",
+    };
+  });
+});
+
+// Computed para filtrar municipios según el departamento seleccionado
+const filteredMunicipios = computed(() => {
+  if (!hospitalSeleccionado.value) return [];
+  const departamentoId = hospitalSeleccionado.value.departamento_id; // Acceso correcto
+  return municipios.value.filter(
+    (mun) => mun.departamentoId === departamentoId
+  );
+});
+
+// Computed para verificar que solo se envían los campos necesarios
+const hospitalParaActualizar = computed(() => {
+  if (!hospitalSeleccionado.value) return {};
+  const { departamentoDescripcion, municipioDescripcion, ...actualizarInfo } =
+    hospitalSeleccionado.value;
+  return actualizarInfo;
+});
+
+// Cargar datos al montar el componente
+onMounted(async () => {
+  await departamentoStore.cargarDepartamentos();
+  console.log("Departamentos cargados:", departamentos.value);
+  await municipioStore.cargarMunicipios();
+  console.log("Municipios cargados:", municipios.value);
+  await hospitalStore.cargarHospitales();
+  console.log("Hospitales cargados:", hospitales.value);
 });
 
 // Abrir el formulario de edición
 const abrirFormularioEdicion = (e) => {
-  hospitalStore.setHospitalSeleccionado(e.row.data); // Actualiza el hospital seleccionado
+  console.log("Datos seleccionados para edición:", e.row.data);
+  // Extraer solo los campos necesarios antes de setHospitalSeleccionado
+  const { departamentoDescripcion, municipioDescripcion, ...hospitalData } =
+    e.row.data;
+  hospitalStore.setHospitalSeleccionado(hospitalData); // Actualiza el hospital seleccionado sin campos adicionales
+  console.log(
+    "Hospital Seleccionado para edición:",
+    hospitalSeleccionado.value
+  );
   mostrarDialogo.value = true; // Abre el modal
 };
 
 // Guardar los cambios del formulario
 const guardarCambios = async () => {
   try {
-    await hospitalStore.actualizarHospital(hospitalSeleccionado.value);
+    await hospitalStore.actualizarHospital(hospitalParaActualizar.value);
     Notify.create({
       type: "positive",
       message: "Hospital actualizado con éxito",

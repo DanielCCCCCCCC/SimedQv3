@@ -2,6 +2,7 @@
 import { defineStore } from "pinia";
 import { ref, reactive, watch, onMounted } from "vue";
 import { supabase } from "../supabaseClient";
+import { Notify } from "quasar";
 
 // Helper para cargar y guardar en localStorage
 function loadFromLocalStorage(key, defaultValue) {
@@ -19,15 +20,19 @@ function saveToLocalStorage(key, value) {
 //
 //
 //
-//// Tienda para Hospitales
+
+// Tienda para Hospitales
 export const useHospitalStore = defineStore("hospitalStore", () => {
   const hospitales = ref([]);
   const hospitalSeleccionado = ref(null); // Para manejar el hospital que se está editando
 
-  const tenantId = "a780935f-76e7-46c7-98a3-b4c3ab9bb2c3";
+  const tenantId = "a780935f-76e7-46c7-98a3-b4c3ab9bb2c3"; // Asegúrate de que este es el valor correcto
+
   const setHospitalSeleccionado = (hospital) => {
     hospitalSeleccionado.value = { ...hospital }; // Clonamos el objeto para evitar mutaciones no deseadas
+    console.log("Hospital Seleccionado:", hospitalSeleccionado.value);
   };
+
   const cargarHospitales = async () => {
     try {
       const { data, error } = await supabase
@@ -40,14 +45,16 @@ export const useHospitalStore = defineStore("hospitalStore", () => {
       } else {
         hospitales.value = data || [];
       }
-      console.log("Hospitales:", hospitales.value);
+      console.log("Datos de hospitales cargados:", hospitales.value);
     } catch (err) {
       console.error("Error en cargarHospitales:", err.message);
     }
   };
 
   const agregarHospital = async (hospitalInfo) => {
-    const hospitalConTenant = { ...hospitalInfo, tenant_Id: tenantId }; // Agrega tenant_Id al crear un hospital
+    const hospitalConTenant = { ...hospitalInfo, tenant_Id: tenantId }; // Asegúrate de usar 'tenant_id' en minúsculas
+
+    console.log("Hospital Con Tenant:", hospitalConTenant); // Para depuración
 
     try {
       const { data, error } = await supabase
@@ -56,11 +63,13 @@ export const useHospitalStore = defineStore("hospitalStore", () => {
 
       if (error) {
         console.error("Error al agregar hospital:", error);
+        throw error; // Propagar el error para manejarlo en el componente
       } else if (data && data[0]) {
         hospitales.value.push(data[0]);
       }
     } catch (err) {
       console.error("Error en agregarHospital:", err.message);
+      throw err; // Propagar el error
     }
   };
 
@@ -70,35 +79,38 @@ export const useHospitalStore = defineStore("hospitalStore", () => {
 
       if (error) {
         console.error("Error al eliminar hospital:", error);
+        throw error; // Propagar el error para manejarlo en el componente
       } else {
         hospitales.value = hospitales.value.filter((h) => h.id !== id);
       }
     } catch (err) {
       console.error("Error en eliminarHospital:", err.message);
+      throw err; // Propagar el error
     }
   };
 
   const actualizarHospital = async (hospitalInfo) => {
+    console.log("Datos enviados para actualizar:", hospitalInfo);
     try {
       const { data, error } = await supabase
         .from("hospitales")
         .update(hospitalInfo)
         .eq("id", hospitalInfo.id);
-
       if (error) {
         console.error("Error al actualizar hospital:", error);
-      } else if (data) {
-        // Actualiza la lista local de hospitales
+        throw error; // Propagar el error
+      } else if (data && data[0]) {
         const index = hospitales.value.findIndex(
           (h) => h.id === hospitalInfo.id
         );
         if (index !== -1) {
           hospitales.value[index] = { ...hospitalInfo };
         }
-        hospitalSeleccionado.value = null; // Limpia el hospital seleccionado después de la edición
+        hospitalSeleccionado.value = null;
       }
     } catch (err) {
       console.error("Error en actualizarHospital:", err.message);
+      throw err; // Propagar el error
     }
   };
 
@@ -112,7 +124,6 @@ export const useHospitalStore = defineStore("hospitalStore", () => {
     actualizarHospital,
   };
 });
-
 //
 //
 //

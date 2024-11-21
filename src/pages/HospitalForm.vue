@@ -7,7 +7,7 @@
           <q-input
             class="q-mb-sm q-mr-sm"
             v-model="hospitalData.nombre"
-            label="Nombressss"
+            label="Nombre"
             outlined
             dense
             :error="!!hospitalErrors.nombre"
@@ -85,13 +85,6 @@
           color="primary"
           icon="add"
           @click="guardarHospital"
-          class="q-mb-sm q-mr-sm"
-        />
-        <q-btn
-          label="Eliminar"
-          color="negative"
-          icon="delete"
-          @click="eliminarHospital"
           class="q-mb-sm q-mr-sm"
         />
       </div>
@@ -216,8 +209,8 @@ const guardarHospital = async () => {
   const hospitalInfo = {
     nombre: hospitalData.nombre,
     direccion: hospitalData.direccion,
-    departamento_id: hospitalData?.departamentoId?.id,
-    municipio_id: hospitalData?.municipioId?.id,
+    departamento_id: hospitalData.departamentoId.id, // Corregido
+    municipio_id: hospitalData.municipioId.id,
     telefono: hospitalData.telefono,
     email: hospitalData.email,
     web: hospitalData.web,
@@ -241,39 +234,6 @@ const guardarHospital = async () => {
       message: "Error al guardar el hospital",
     });
     console.error("Error al guardar hospital:", error);
-  }
-};
-
-// Función para eliminar hospital
-const eliminarHospital = async () => {
-  // Asegurarse de tener el ID del hospital
-  const id = hospitalData.id;
-  if (!id) {
-    Notify.create({
-      type: "negative",
-      position: "top-right",
-      message: "Seleccione un hospital para eliminar",
-    });
-    return;
-  }
-  try {
-    await hospitalStore.eliminarHospital(id);
-    Notify.create({
-      type: "warning",
-      position: "top-right",
-      message: "Hospital eliminado correctamente",
-    });
-    // Limpiar formulario
-    Object.keys(hospitalData).forEach((key) => {
-      hospitalData[key] = "";
-    });
-  } catch (error) {
-    console.error("Error al eliminar hospital:", error);
-    Notify.create({
-      type: "negative",
-      position: "top-right",
-      message: "Error al eliminar el hospital",
-    });
   }
 };
 </script>
