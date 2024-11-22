@@ -4,7 +4,6 @@ import { supabase } from "../supabaseClient";
 
 const tenantId = "a780935f-76e7-46c7-98a3-b4c3ab9bb2c3"; // Tenant fijo
 
-// Tienda para Especialidades Médicas
 export const useEspecialidadMedicaStore = defineStore(
   "especialidadesMedicas",
   () => {
@@ -18,7 +17,7 @@ export const useEspecialidadMedicaStore = defineStore(
         console.error("Error al cargar especialidades:", error.message);
       } else {
         especialidades.value = data;
-        console.log("Especialidades cargadas:", especialidades.value); // Verificar datos
+        console.log("Especialidades cargadas:", especialidades.value);
       }
     }
 
@@ -49,11 +48,29 @@ export const useEspecialidadMedicaStore = defineStore(
       }
     };
 
+    // Función para actualizar una especialidad
+    const actualizarEspecialidad = async (id, descripcion) => {
+      const { data, error } = await supabase
+        .from("especialidadesMedicas")
+        .update({ descripcion })
+        .eq("id", id);
+
+      if (error) {
+        console.error("Error al actualizar la especialidad:", error);
+      } else if (data && data[0]) {
+        const index = especialidades.value.findIndex((e) => e.id === id);
+        if (index !== -1) {
+          especialidades.value[index] = data[0];
+        }
+      }
+    };
+
     return {
       especialidades,
       cargarEspecialidades,
       agregarEspecialidad,
       eliminarEspecialidad,
+      actualizarEspecialidad, // Agregamos la función al return
     };
   }
 );
@@ -100,11 +117,29 @@ export const useTiposEstudiosStore = defineStore("tiposEstudios", () => {
     }
   };
 
+  // Función para actualizar un estudio
+  const actualizarEstudio = async (id, descripcion) => {
+    const { data, error } = await supabase
+      .from("tiposEstudios")
+      .update({ descripcion })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar el estudio:", error);
+    } else if (data && data[0]) {
+      const index = estudios.value.findIndex((e) => e.id === id);
+      if (index !== -1) {
+        estudios.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     estudios,
     cargarEstudios,
     agregarEstudio,
     eliminarEstudio,
+    actualizarEstudio, // Agregamos la función al return
   };
 });
 
@@ -154,11 +189,29 @@ export const useTiposMedicamentosStore = defineStore(
       }
     };
 
+    // Función para actualizar un medicamento
+    const actualizarMedicamento = async (id, descripcion) => {
+      const { data, error } = await supabase
+        .from("tiposMedicamentos")
+        .update({ descripcion })
+        .eq("id", id);
+
+      if (error) {
+        console.error("Error al actualizar el medicamento:", error);
+      } else if (data && data[0]) {
+        const index = medicamentos.value.findIndex((m) => m.id === id);
+        if (index !== -1) {
+          medicamentos.value[index] = data[0];
+        }
+      }
+    };
+
     return {
       medicamentos,
       cargarMedicamentos,
       agregarMedicamento,
       eliminarMedicamento,
+      actualizarMedicamento, // Agregamos la función al return
     };
   }
 );
@@ -207,11 +260,29 @@ export const useTiposPacientesStore = defineStore("tiposPacientes", () => {
     }
   };
 
+  // Función para actualizar un tipo de paciente
+  const actualizarPaciente = async (id, descripcion) => {
+    const { data, error } = await supabase
+      .from("tiposPacientes")
+      .update({ descripcion })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar el tipo de paciente:", error);
+    } else if (data && data[0]) {
+      const index = tpacientes.value.findIndex((p) => p.id === id);
+      if (index !== -1) {
+        tpacientes.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     tpacientes,
     cargarPacientes,
     agregarPaciente,
     eliminarPaciente,
+    actualizarPaciente, // Agregamos la función al return
   };
 });
 
@@ -257,14 +328,31 @@ export const useGruposContactosStore = defineStore("gruposContactos", () => {
     }
   };
 
+  // Función para actualizar un grupo de contacto
+  const actualizarGrupo = async (id, descripcion) => {
+    const { data, error } = await supabase
+      .from("gruposContactos")
+      .update({ descripcion })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar el grupo de contacto:", error);
+    } else if (data && data[0]) {
+      const index = grupos.value.findIndex((g) => g.id === id);
+      if (index !== -1) {
+        grupos.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     grupos,
     cargarGrupos,
     agregarGrupo,
     eliminarGrupo,
+    actualizarGrupo, // Agregamos la función al return
   };
 });
-
 // Tienda para Tipos de Citas
 export const useTiposCitasStore = defineStore("tiposCitas", () => {
   const citas = ref([]);
@@ -304,10 +392,28 @@ export const useTiposCitasStore = defineStore("tiposCitas", () => {
     }
   };
 
+  // Función para actualizar un tipo de cita
+  const actualizarCita = async (id, descripcion) => {
+    const { data, error } = await supabase
+      .from("tiposCitas")
+      .update({ descripcion })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar el tipo de cita:", error);
+    } else if (data && data[0]) {
+      const index = citas.value.findIndex((c) => c.id === id);
+      if (index !== -1) {
+        citas.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     citas,
     cargarCitas,
     agregarCita,
     eliminarCita,
+    actualizarCita, // Agregamos la función al return
   };
 });

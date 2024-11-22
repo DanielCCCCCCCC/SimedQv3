@@ -7,7 +7,6 @@
       :allow-column-resizing="true"
       :column-auto-width="true"
       :allow-column-reordering="true"
-      @exporting="exportGrid"
     >
       <!-- Agrupación por departamento -->
       <DxColumn

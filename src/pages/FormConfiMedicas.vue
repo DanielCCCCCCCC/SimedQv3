@@ -37,222 +37,27 @@
     <q-tab-panels v-model="tab" animated swipeable>
       <!-- Panel para Especialidades Médicas -->
       <q-tab-panel name="Especialidades Médicas">
-        <q-card
-          class="q-pa-sm q-mt-md formS bg-grey-1 rounded shadow-2xl wide-card"
-        >
-          <q-card-section class="text-h6 text-primary"
-            >Especialidades Médicas</q-card-section
-          >
-          <q-form @submit.prevent="guardarEspecialidad" class="q-gutter-md">
-            <q-input
-              v-model="especialidadData.descripcion"
-              label="Descripción"
-              outlined
-              dense
-            />
-            <div class="row justify-end q-mt-md">
-              <q-btn
-                label="Crear"
-                color="primary"
-                icon="add"
-                @click="guardarEspecialidad"
-              />
-              <q-btn
-                label="Eliminar"
-                color="negative"
-                icon="delete"
-                @click="eliminarEspecialidad"
-                class="q-ml-sm"
-              />
-            </div>
-          </q-form>
-        </q-card>
-        <div>
-          <ListadoEspecialidadesMedicas />
-        </div>
+        <FormEspecialidadesMedicas />
       </q-tab-panel>
 
-      <!-- Panel para Tipos de Estudios -->
       <q-tab-panel name="Tipos de Estudios">
-        <q-card
-          class="q-pa-sm q-mt-md bg-grey-1 formS rounded shadow-2xl wide-card"
-        >
-          <q-card-section class="text-h6 text-primary"
-            >Tipos de Estudios</q-card-section
-          >
-          <q-form @submit.prevent="guardarEstudio" class="q-gutter-md">
-            <q-input
-              v-model="estudioData.descripcion"
-              label="Descripción"
-              outlined
-              dense
-            />
-            <div class="row justify-end q-mt-md">
-              <q-btn
-                label="Crear"
-                color="primary"
-                icon="add"
-                @click="guardarEstudio"
-              />
-              <q-btn
-                label="Eliminar"
-                color="negative"
-                icon="delete"
-                @click="eliminarEstudio"
-                class="q-ml-sm"
-              />
-            </div>
-          </q-form>
-        </q-card>
-        <div>
-          <ListadoTiposEstudios />
-        </div>
+        <FormTiposEstudios />
       </q-tab-panel>
 
-      <!-- Panel para Tipos de Medicamentos -->
       <q-tab-panel name="Tipos de Medicamentos">
-        <q-card
-          class="q-pa-sm q-mt-md bg-grey-1 formS rounded shadow-2xl wide-card"
-        >
-          <q-card-section class="text-h6 text-primary"
-            >Tipos de Medicamentos</q-card-section
-          >
-          <q-form @submit.prevent="guardarMedicamento" class="q-gutter-md">
-            <q-input
-              v-model="medicamentoData.descripcion"
-              label="Descripción"
-              outlined
-              dense
-            />
-            <div class="row justify-end q-mt-md">
-              <q-btn
-                label="Crear"
-                color="primary"
-                icon="add"
-                @click="guardarMedicamento"
-              />
-              <q-btn
-                label="Eliminar"
-                color="negative"
-                icon="delete"
-                @click="eliminarMedicamento"
-                class="q-ml-sm"
-              />
-            </div>
-          </q-form>
-        </q-card>
-        <div>
-          <ListadoTiposMedicamentos />
-        </div>
+        <FormTiposMedicamentos />
       </q-tab-panel>
 
-      <!-- Panel para Tipos de Pacientes -->
       <q-tab-panel name="Tipos de Pacientes">
-        <q-card
-          class="q-pa-sm q-mt-md bg-grey-1 rounded shadow-2xl formS wide-card"
-        >
-          <q-card-section class="text-h6 text-primary"
-            >Tipos de Pacientes</q-card-section
-          >
-          <q-form @submit.prevent="guardarPaciente" class="q-gutter-md">
-            <q-input
-              v-model="pacienteData.descripcion"
-              label="Descripción"
-              outlined
-              dense
-            />
-            <div class="row justify-end q-mt-md">
-              <q-btn
-                label="Crear"
-                color="primary"
-                icon="add"
-                @click="guardarPaciente"
-              />
-              <q-btn
-                label="Eliminar"
-                color="negative"
-                icon="delete"
-                @click="eliminarPaciente"
-                class="q-ml-sm"
-              />
-            </div>
-          </q-form>
-        </q-card>
-        <div>
-          <ListadoTipoPacientes />
-        </div>
+        <FormTiposPacientes />
       </q-tab-panel>
 
-      <!-- Panel para Grupos de Contactos -->
       <q-tab-panel name="Grupos de Contactos">
-        <q-card
-          class="q-pa-sm q-mt-md bg-grey-1 rounded formS shadow-2xl wide-card"
-        >
-          <q-card-section class="text-h6 text-primary"
-            >Grupos de Contactos</q-card-section
-          >
-          <q-form @submit.prevent="guardarGrupoContacto" class="q-gutter-md">
-            <q-input
-              v-model="grupoContactoData.descripcion"
-              label="Descripción"
-              outlined
-              dense
-            />
-            <div class="row justify-end q-mt-md">
-              <q-btn
-                label="Crear"
-                color="primary"
-                icon="add"
-                @click="guardarGrupoContacto"
-              />
-              <q-btn
-                label="Eliminar"
-                color="negative"
-                icon="delete"
-                @click="eliminarGrupoContacto"
-                class="q-ml-sm"
-              />
-            </div>
-          </q-form>
-        </q-card>
-        <ListadoGruposContactos />
+        <FormGruposContactos />
       </q-tab-panel>
 
-      <!-- Panel para Tipos de Citas -->
       <q-tab-panel name="Tipos de Citas">
-        <q-card
-          class="q-pa-sm q-mt-md bg-grey-1 rounded formS shadow-2xl wide-card"
-        >
-          <q-card-section class="text-h6 text-primary"
-            >Tipos de Citas</q-card-section
-          >
-          <q-form @submit.prevent="guardarCita" class="q-gutter-md">
-            <q-input
-              v-model="citaData.descripcion"
-              label="Descripción"
-              outlined
-              dense
-            />
-            <div class="row justify-end q-mt-md">
-              <q-btn
-                label="Crear"
-                color="primary"
-                icon="add"
-                @click="guardarCita"
-              />
-              <q-btn
-                label="Eliminar"
-                color="negative"
-                icon="delete"
-                @click="eliminarCita"
-                class="q-ml-sm"
-              />
-            </div>
-          </q-form>
-        </q-card>
-        <div>
-          <ListadoTiposCitas />
-        </div>
+        <FormTiposCitas />
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
@@ -261,12 +66,20 @@
 import { ref, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Notify } from "quasar";
-import ListadoEspecialidadesMedicas from "./ListadoEspecialidadesMedicas.vue";
-import ListadoTiposEstudios from "./ListadoTiposEstudios.vue";
-import ListadoTiposMedicamentos from "./ListadoTiposMedicamentos.vue";
-import ListadoTipoPacientes from "./ListadoTipoPacientes.vue";
-import ListadoGruposContactos from "./ListadoGruposContactos.vue";
-import ListadoTiposCitas from "./ListadoTiposCitas.vue";
+// import ListadoEspecialidadesMedicas from "./ListadoEspecialidadesMedicas.vue";
+// import ListadoTiposEstudios from "./ListadoTiposEstudios.vue";
+// import ListadoTiposMedicamentos from "./ListadoTiposMedicamentos.vue";
+// import ListadoTipoPacientes from "./ListadoTipoPacientes.vue";
+// import ListadoGruposContactos from "./ListadoGruposContactos.vue";
+// import ListadoTiposCitas from "./ListadoTiposCitas.vue";
+//Formularios
+
+import FormEspecialidadesMedicas from "./FormEspecialidadesMedicas.vue";
+import FormTiposEstudios from "./FormTiposEstudios.vue";
+import FormTiposMedicamentos from "./FormTiposMedicamentos.vue";
+import FormTiposPacientes from "./FormTiposPacientes.vue";
+import FormGruposContactos from "./FormGruposContactos.vue";
+import FormTiposCitas from "./FormTiposCitas.vue";
 
 // Importar las stores necesarias
 import {

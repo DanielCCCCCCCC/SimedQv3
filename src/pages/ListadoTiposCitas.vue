@@ -1,5 +1,6 @@
 <template>
   <q-card class="q-pa-sm q-mt-md bg-grey-1 rounded shadow-2xl">
+    <!-- DataGrid para Tipos de Citas -->
     <DxDataGrid
       :data-source="citas"
       key-expr="id"
@@ -18,13 +19,14 @@
         data-field="created_at"
         caption="Fecha de Creación"
         data-type="date"
+        :format="{ type: 'shortDate' }"
       >
         <DxRequiredRule />
       </DxColumn>
 
       <!-- Botones de edición y eliminación -->
       <DxColumn type="buttons">
-        <DxButton icon="edit" hint="Editar" @click="actualizarCita" />
+        <DxButton icon="edit" hint="Editar" @click="abrirFormularioEdicion" />
         <DxButton icon="trash" hint="Eliminar" @click="eliminarCita" />
       </DxColumn>
 
@@ -38,9 +40,36 @@
       <DxGroupPanel :visible="true" />
       <DxGrouping :auto-expand-all="false" />
     </DxDataGrid>
+
+    <!-- Formulario de edición (ventana modal) -->
+    <q-dialog v-model="mostrarDialogo">
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <div class="text-h6">Editar Tipo de Cita</div>
+          <q-space />
+          <q-btn icon="close" flat round @click="cerrarDialogo" />
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit.prevent="guardarCambios">
+            <q-input
+              v-model="citaSeleccionada.descripcion"
+              label="Descripción"
+              outlined
+              dense
+              :rules="[validador]"
+            />
+          </q-form>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="primary" @click="cerrarDialogo" />
+          <q-btn label="Guardar" color="primary" @click="guardarCambios" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-card>
 </template>
-
 <script setup>
 import {
   DxDataGrid,
@@ -58,55 +87,92 @@ import {
 import { useTiposCitasStore } from "../stores/ConfiMedicasStores";
 import { storeToRefs } from "pinia";
 import { Notify } from "quasar";
+import { ref, onMounted } from "vue";
 
+// Instancia de la tienda y referencias reactivas
 const citasStore = useTiposCitasStore();
 const { citas } = storeToRefs(citasStore);
-citasStore.cargarCitas();
 
-// Función para actualizar cita
-const actualizarCita = (e) => {
+// Estado para el modal y la cita seleccionada
+const mostrarDialogo = ref(false);
+const citaSeleccionada = ref({});
+
+// Cargar citas al montar el componente
+onMounted(async () => {
+  await citasStore.cargarCitas();
+});
+
+// Función para abrir el formulario de edición
+const abrirFormularioEdicion = (e) => {
   const cita = e.row.data;
-  citasStore.actualizarCita(cita).then(() => {
+  citaSeleccionada.value = { ...cita };
+  mostrarDialogo.value = true;
+};
+
+// Función para guardar los cambios
+const guardarCambios = async () => {
+  try {
+    // Validar que la descripción no esté vacía
+    if (!citaSeleccionada.value.descripcion.trim()) {
+      Notify.create({
+        type: "negative",
+        message: "La descripción es obligatoria",
+        position: "top-right",
+      });
+      return;
+    }
+
+    // Actualizar la cita en la tienda
+    await citasStore.actualizarCita(
+      citaSeleccionada.value.id,
+      citaSeleccionada.value.descripcion
+    );
+
+    // Mostrar notificación de éxito
     Notify.create({
       type: "positive",
       message: "Cita actualizada con éxito",
       position: "top-right",
     });
-  });
+
+    // Cerrar el diálogo
+    cerrarDialogo();
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al actualizar la cita",
+      position: "top-right",
+    });
+    console.error("Error al guardar cambios:", error);
+  }
 };
 
 // Función para eliminar cita
-const eliminarCita = (e) => {
-  const citaId = e.row.data.id;
-  citasStore.eliminarCita(citaId).then(() => {
+const eliminarCita = async (e) => {
+  try {
+    const citaId = e.row.data.id;
+    await citasStore.eliminarCita(citaId);
     Notify.create({
       type: "negative",
       message: "Cita eliminada",
       position: "top-right",
     });
-  });
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al eliminar la cita",
+      position: "top-right",
+    });
+    console.error("Error al eliminar cita:", error);
+  }
 };
+
+// Función para cerrar el diálogo
+const cerrarDialogo = () => {
+  mostrarDialogo.value = false;
+  citaSeleccionada.value = {};
+};
+
+// Validador para el campo de descripción
+const validador = (val) => !!val || "La descripción es obligatoria";
 </script>
-
-<style scoped>
-#app-container {
-  padding: 0 4px;
-  background-color: #f9f9f9;
-  width: 100%; /* Ajuste para que ocupe el 100% del ancho disponible */
-}
-
-.custom-data-grid {
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 100%; /* Hacer que el DataGrid ocupe el 100% del ancho del contenedor */
-}
-
-.header-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  margin: 1px 0 1px;
-  text-align: center;
-}
-</style>

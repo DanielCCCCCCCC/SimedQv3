@@ -1,5 +1,6 @@
 <template>
   <q-card class="q-pa-sm q-mt-md bg-grey-1 rounded shadow-2xl">
+    <!-- DataGrid para Tipos de Estudios -->
     <DxDataGrid
       :data-source="estudios"
       key-expr="id"
@@ -18,13 +19,14 @@
         data-field="created_at"
         caption="Fecha de Creación"
         data-type="date"
+        :format="{ type: 'shortDate' }"
       >
         <DxRequiredRule />
       </DxColumn>
 
       <!-- Botones de edición y eliminación -->
       <DxColumn type="buttons">
-        <DxButton icon="edit" hint="Editar" @click="actualizarEstudio" />
+        <DxButton icon="edit" hint="Editar" @click="abrirFormularioEdicion" />
         <DxButton icon="trash" hint="Eliminar" @click="eliminarEstudio" />
       </DxColumn>
 
@@ -38,9 +40,36 @@
       <DxGroupPanel :visible="true" />
       <DxGrouping :auto-expand-all="false" />
     </DxDataGrid>
+
+    <!-- Formulario de edición (ventana modal) -->
+    <q-dialog v-model="mostrarDialogo">
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <div class="text-h6">Editar Tipo de Estudio</div>
+          <q-space />
+          <q-btn icon="close" flat round @click="cerrarDialogo" />
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit.prevent="guardarCambios">
+            <q-input
+              v-model="estudioSeleccionado.descripcion"
+              label="Descripción"
+              outlined
+              dense
+              :rules="[validador]"
+            />
+          </q-form>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="primary" @click="cerrarDialogo" />
+          <q-btn label="Guardar" color="primary" @click="guardarCambios" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-card>
 </template>
-
 <script setup>
 import {
   DxDataGrid,
@@ -58,48 +87,107 @@ import {
 import { useTiposEstudiosStore } from "../stores/ConfiMedicasStores";
 import { storeToRefs } from "pinia";
 import { Notify } from "quasar";
+import { ref, onMounted } from "vue";
 
+// Instancia de la tienda y referencias reactivas
 const estudiosStore = useTiposEstudiosStore();
 const { estudios } = storeToRefs(estudiosStore);
-estudiosStore.cargarEstudios();
 
-// Función para actualizar estudio
-const actualizarEstudio = (e) => {
+// Estado para el modal y el estudio seleccionado
+const mostrarDialogo = ref(false);
+const estudioSeleccionado = ref({});
+
+// Cargar estudios al montar el componente
+onMounted(async () => {
+  await estudiosStore.cargarEstudios();
+});
+
+// Función para abrir el formulario de edición
+const abrirFormularioEdicion = (e) => {
   const estudio = e.row.data;
-  estudiosStore.actualizarEstudio(estudio).then(() => {
+  estudioSeleccionado.value = { ...estudio };
+  mostrarDialogo.value = true;
+};
+
+// Función para guardar los cambios
+const guardarCambios = async () => {
+  try {
+    // Validar que la descripción no esté vacía
+    if (!estudioSeleccionado.value.descripcion.trim()) {
+      Notify.create({
+        type: "negative",
+        message: "La descripción es obligatoria",
+        position: "top-right",
+      });
+      return;
+    }
+
+    // Actualizar el estudio en la tienda
+    await estudiosStore.actualizarEstudio(
+      estudioSeleccionado.value.id,
+      estudioSeleccionado.value.descripcion
+    );
+
+    // Mostrar notificación de éxito
     Notify.create({
       type: "positive",
       message: "Estudio actualizado con éxito",
       position: "top-right",
     });
-  });
+
+    // Cerrar el diálogo
+    cerrarDialogo();
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al actualizar el estudio",
+      position: "top-right",
+    });
+    console.error("Error al guardar cambios:", error);
+  }
 };
 
 // Función para eliminar estudio
-const eliminarEstudio = (e) => {
-  const estudioId = e.row.data.id;
-  estudiosStore.eliminarEstudio(estudioId).then(() => {
+const eliminarEstudio = async (e) => {
+  try {
+    const estudioId = e.row.data.id;
+    await estudiosStore.eliminarEstudio(estudioId);
     Notify.create({
       type: "negative",
       message: "Estudio eliminado",
       position: "top-right",
     });
-  });
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al eliminar el estudio",
+      position: "top-right",
+    });
+    console.error("Error al eliminar estudio:", error);
+  }
 };
-</script>
 
+// Función para cerrar el diálogo
+const cerrarDialogo = () => {
+  mostrarDialogo.value = false;
+  estudioSeleccionado.value = {};
+};
+
+// Validador para el campo de descripción
+const validador = (val) => !!val || "La descripción es obligatoria";
+</script>
 <style scoped>
 #app-container {
   padding: 0 4px;
   background-color: #f9f9f9;
-  width: 100%; /* Ajuste para que ocupe el 100% del ancho disponible */
+  width: 100%;
 }
 
 .custom-data-grid {
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 100%; /* Hacer que el DataGrid ocupe el 100% del ancho del contenedor */
+  width: 100%;
 }
 
 .header-title {
