@@ -2,11 +2,6 @@
   <div class="scheduler-container">
     <CitasAgendadas />
   </div>
-  <!-- <div>
-    <q-btn label="Seleccionar Paciente" @click="openPatientModal" />
-    <span v-if="selectedPatient">{{ selectedPatient }}</span>
-    <span v-else>No seleccionado</span>
-  </div> -->
 
   <div class="scheduler-container">
     <DxScheduler
@@ -64,6 +59,47 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Modal para buscar médicos -->
+    <!-- Modal para buscar médicos -->
+    <q-dialog v-model="isDoctorModalOpen" persistent>
+      <q-card style="width: 80%; max-width: 800px">
+        <q-card-section>
+          <div class="text-h6">Seleccionar Médico</div>
+        </q-card-section>
+        <q-card-section>
+          <template v-if="isMedicosLoading || isEspecialidadesLoading">
+            <div class="q-pa-md">
+              <q-spinner-dots color="primary" size="40px" />
+              <div class="text-center q-mt-md">Cargando médicos...</div>
+            </div>
+          </template>
+          <template v-else>
+            <DxDataGrid
+              :data-source="medicosConEspecialidad"
+              :show-borders="true"
+              :height="400"
+              @selection-changed="onDoctorSelected"
+            >
+              <DxSearchPanel
+                :width="300"
+                :visible="true"
+                placeholder="Buscar Médico"
+              />
+              <DxSelection mode="single" />
+              <DxColumn data-field="nombre" caption="Nombre" />
+              <DxColumn
+                data-field="especialidadDescripcion"
+                caption="Especialidad"
+              />
+            </DxDataGrid>
+          </template>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cerrar" @click="isDoctorModalOpen = false" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -72,6 +108,7 @@ import { DxScheduler, DxView } from "devextreme-vue/scheduler";
 
 import { useAppointmentsStore } from "../stores/AppointmentsStore";
 import { useMedicoStore } from "../stores/MedicoStores";
+import { useEspecialidadMedicaStore } from "../stores/ConfiMedicasStores"; // Asegúrate de que esta ruta es correcta
 import { useTiposCitasStore } from "src/stores/ConfiMedicasStores";
 import { useFichaIdentificacionStore } from "src/stores/fichaIdentificacionStores";
 import { onMounted, ref, computed } from "vue";
@@ -86,59 +123,108 @@ import {
 import { supabase } from "../supabaseClient";
 import { Notify } from "quasar"; // Importar Notify de Quasar
 
-// Variables reactivas
+// Variables reactivas para modales y selección
 const isModalOpen = ref(false);
 const selectedPatient = ref(null);
 const selectedPatientId = ref(null);
+const isDoctorModalOpen = ref(false);
+const selectedDoctor = ref(null);
+const selectedDoctorId = ref(null);
 const appointmentForm = ref(null);
 const currentAppointmentData = ref(null);
+const isMedicosLoading = ref(true); // Variable para indicar carga de médicos
+const isEspecialidadesLoading = ref(true); // Variable para indicar carga de especialidades
+const isPacientesLoading = ref(false); // Variable para indicar carga de pacientes (si aplica)
 
-const store = useAppointmentsStore();
-const MedicoStore = useMedicoStore();
-const TiposCitasStore = useTiposCitasStore();
-const FichaIdentificacionStore = useFichaIdentificacionStore();
+// Acceder a las stores
+const appointmentsStore = useAppointmentsStore();
+const medicoStore = useMedicoStore();
+const especialidadMedicaStore = useEspecialidadMedicaStore(); // Instancia de la store de especialidades
+const tiposCitasStore = useTiposCitasStore();
+const fichaIdentificacionStore = useFichaIdentificacionStore();
 
-const { medicos } = storeToRefs(MedicoStore);
-const { citas } = storeToRefs(TiposCitasStore);
-const { formIdentificacion } = storeToRefs(FichaIdentificacionStore);
+// Desestructurar las variables reactivas desde las stores
+const { medicos } = storeToRefs(medicoStore);
+const { especialidades } = storeToRefs(especialidadMedicaStore); // Desestructurar 'especialidades'
+const { citas } = storeToRefs(tiposCitasStore);
+const { formIdentificacion } = storeToRefs(fichaIdentificacionStore);
 
-const appointments = computed(() => store.appointments);
+// Computed property para mapear la descripción de la especialidad a cada médico
+const medicosConEspecialidad = computed(() => {
+  if (!medicos.value || !especialidades.value) {
+    return [];
+  }
+
+  return medicos.value.map((medico) => {
+    const especialidad = especialidades.value.find(
+      (esp) => esp.id === medico.especialidadId
+    );
+    return {
+      ...medico,
+      especialidadDescripcion: especialidad
+        ? especialidad.descripcion
+        : "Especialidad no encontrada",
+    };
+  });
+});
+
+// Fecha y vista del Scheduler
+const appointments = computed(() => appointmentsStore.appointments);
 const currentDate = ref(new Date());
 const currentView = ref("month");
 const views = ["day", "week", "workWeek", "month", "agenda"];
 
-onMounted(() => {
-  store.fetchAppointments();
-  MedicoStore.cargarMedicos();
-  TiposCitasStore.cargarCitas();
-  FichaIdentificacionStore.cargarDatos();
-  console.log("Datos de pacientes cargados:", formIdentificacion.value);
-});
+// Computed property para concatenar título y nombre del paciente
+const computedAppointments = computed(() =>
+  appointments.value.map((appointment) => {
+    const paciente = formIdentificacion.value.find(
+      (p) => p.id === parseInt(appointment.nombre)
+    );
+    const nombrePaciente = paciente
+      ? `${paciente.nombres} ${paciente.apellidos}`
+      : "Paciente no asignado";
 
-// Función para obtener el inicio del día a las 12:00 AM
+    return {
+      ...appointment,
+      text: `${appointment.title} - ${nombrePaciente}`,
+      startDate: new Date(appointment.startDate),
+      endDate: new Date(appointment.endDate),
+    };
+  })
+);
+
+// Funciones para abrir los modales
+const openPatientModal = () => {
+  isModalOpen.value = true;
+};
+
+const openDoctorModal = () => {
+  isDoctorModalOpen.value = true;
+};
+
+// Funciones auxiliares para fechas
 const getStartOfDay = (date) => {
   const newDate = new Date(date);
   newDate.setHours(0, 0, 0, 0);
   return newDate;
 };
 
-// Función para obtener el final del día a las 11:59 PM
 const getEndOfDay = (date) => {
   const newDate = new Date(date);
   newDate.setHours(23, 59, 59, 999);
   return newDate;
 };
 
-// Función para formatear la fecha a ISO sin zona horaria
-const formatDateToISO = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const seconds = String(date.getSeconds()).padStart(2, "0");
+const formatDate = (date) => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const seconds = String(d.getSeconds()).padStart(2, "0");
 
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
 // Función para verificar superposición de citas
@@ -166,43 +252,7 @@ const checkAppointmentOverlap = async (appointment) => {
   return overlappingAppointments.length > 0;
 };
 
-const formatDate = (date) => {
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  const seconds = String(d.getSeconds()).padStart(2, "0");
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-};
-
-// Computed property para concatenar título y nombre del paciente
-const computedAppointments = computed(() =>
-  store.appointments.map((appointment) => {
-    const paciente = formIdentificacion.value.find(
-      (p) => p.id === parseInt(appointment.nombre)
-    );
-    const nombrePaciente = paciente
-      ? `${paciente.nombres} ${paciente.apellidos}`
-      : "Paciente no asignado";
-
-    return {
-      ...appointment,
-      text: `${appointment.title} - ${nombrePaciente}`,
-      startDate: new Date(appointment.startDate),
-      endDate: new Date(appointment.endDate),
-    };
-  })
-);
-
-// Abrir modal al hacer clic en "Seleccionar Paciente"
-const openPatientModal = () => {
-  console.log(formIdentificacion.value);
-  isModalOpen.value = true;
-};
-
+// Manejar apertura del formulario de citas
 const onAppointmentFormOpening = (e) => {
   const form = e.form;
   appointmentForm.value = form;
@@ -226,6 +276,24 @@ const onAppointmentFormOpening = (e) => {
     selectedPatientId.value = null;
   }
 
+  // Inicializar selectedDoctor y selectedDoctorId al editar una cita
+  if (currentAppointmentData.value.medico) {
+    const doctor = medicosConEspecialidad.value.find(
+      (d) => d.id === parseInt(currentAppointmentData.value.medico)
+    );
+    if (doctor) {
+      selectedDoctor.value = doctor.nombre;
+      selectedDoctorId.value = doctor.id;
+    } else {
+      selectedDoctor.value = "No seleccionado";
+      selectedDoctorId.value = null;
+    }
+  } else {
+    selectedDoctor.value = "No seleccionado";
+    selectedDoctorId.value = null;
+  }
+
+  // Configurar los elementos del formulario
   form.option("items", [
     {
       itemType: "group",
@@ -309,7 +377,7 @@ const onAppointmentFormOpening = (e) => {
     },
     {
       itemType: "group",
-      caption: "Información del Paciente",
+      caption: "Información del Paciente y Médico",
       colCount: 1,
       items: [
         {
@@ -326,7 +394,7 @@ const onAppointmentFormOpening = (e) => {
           template: () => {
             const container = document.createElement("div");
 
-            // Botón para abrir el modal
+            // Botón para abrir el modal de pacientes
             const button = document.createElement("button");
             button.textContent = "Seleccionar Paciente";
             button.className = "btn btn-primary";
@@ -337,15 +405,27 @@ const onAppointmentFormOpening = (e) => {
           },
         },
         {
-          dataField: "medico",
-          editorType: "dxSelectBox",
-          label: { text: "Médico" },
+          dataField: "selectedDoctorName",
+          editorType: "dxTextBox",
+          label: { text: "Médico Seleccionado" },
           editorOptions: {
-            dataSource: medicos.value,
-            displayExpr: "nombre",
-            valueExpr: "id",
-            value: parseInt(e.appointmentData.medico),
-            placeholder: "Selecciona un médico",
+            readOnly: true,
+            value: selectedDoctor.value,
+          },
+        },
+        {
+          itemType: "simple",
+          template: () => {
+            const container = document.createElement("div");
+
+            // Botón para abrir el modal de médicos
+            const button = document.createElement("button");
+            button.textContent = "Seleccionar Médico";
+            button.className = "btn btn-primary";
+            button.onclick = () => openDoctorModal();
+
+            container.appendChild(button);
+            return container;
           },
         },
         {
@@ -361,9 +441,29 @@ const onAppointmentFormOpening = (e) => {
   ]);
 };
 
+// Manejar el agregado de citas
 const onAppointmentAdded = async (e) => {
   try {
     const appointmentData = e.appointmentData;
+
+    // Validar que se haya seleccionado un paciente y un médico
+    if (!selectedPatientId.value) {
+      Notify.create({
+        message: "Por favor, selecciona un paciente.",
+        color: "warning",
+        position: "top-right",
+      });
+      throw new Error("Paciente no seleccionado.");
+    }
+
+    if (!selectedDoctorId.value) {
+      Notify.create({
+        message: "Por favor, selecciona un médico.",
+        color: "warning",
+        position: "top-right",
+      });
+      throw new Error("Médico no seleccionado.");
+    }
 
     // Preparar nueva cita con fechas formateadas
     const newAppointment = {
@@ -378,7 +478,7 @@ const onAppointmentAdded = async (e) => {
       repeat: appointmentData.repeat,
       description: appointmentData.description,
       nombre: selectedPatientId.value, // ID del paciente seleccionado
-      medico: appointmentData.medico,
+      medico: selectedDoctorId.value, // ID del médico seleccionado
       tipoCita: appointmentData.tipoCita,
     };
 
@@ -400,22 +500,57 @@ const onAppointmentAdded = async (e) => {
       throw new Error("Superposición de citas detectada.");
     }
 
-    // Guardar la cita si no hay superposición
-    const { data, error } = await store.addAppointment(newAppointment);
+    // Guardar la cita en Supabase
+    const { data, error } = await supabase
+      .from("appointments")
+      .insert([newAppointment])
+      .select();
 
     if (error) {
       console.error("Error al guardar la cita en Supabase:", error.message);
-    } else if (data && data[0]) {
+      Notify.create({
+        message: `Error al guardar la cita: ${error.message}`,
+        color: "negative",
+        position: "top-right",
+      });
+      throw error;
+    }
+
+    if (data && data.length > 0) {
       console.log("Cita agregada exitosamente:", data[0]);
-      await store.fetchAppointments();
+      Notify.create({
+        message: "Cita agregada exitosamente.",
+        color: "positive",
+        position: "top-right",
+      });
+      // Actualizar las citas mostradas
+      computedAppointments.value.push({
+        ...data[0],
+        text: `${data[0].title} - ${selectedPatient.value}`,
+        startDate: new Date(data[0].startDate),
+        endDate: new Date(data[0].endDate),
+      });
+      // Opcional: Actualizar la store de citas si es necesario
+      appointmentsStore.fetchAppointments(); // Asegúrate de que esta función actualiza las citas
     } else {
       console.error("No se pudo obtener la cita creada de Supabase.");
+      Notify.create({
+        message: "No se pudo obtener la cita creada.",
+        color: "negative",
+        position: "top-right",
+      });
     }
   } catch (error) {
     console.error("Error al agregar la cita:", error);
+    Notify.create({
+      message: `Error al agregar la cita: ${error.message}`,
+      color: "negative",
+      position: "top-right",
+    });
   }
 };
 
+// Manejar la actualización de citas
 const onAppointmentUpdated = async (e) => {
   try {
     const appointmentData = e.appointmentData;
@@ -434,7 +569,7 @@ const onAppointmentUpdated = async (e) => {
       repeat: appointmentData.repeat,
       description: appointmentData.description,
       nombre: selectedPatientId.value || appointmentData.nombre,
-      medico: appointmentData.medico,
+      medico: selectedDoctorId.value || appointmentData.medico,
       tipoCita: appointmentData.tipoCita,
     };
 
@@ -453,27 +588,103 @@ const onAppointmentUpdated = async (e) => {
       throw new Error("Superposición de citas detectada.");
     }
 
-    // Actualizar la cita si no hay superposición
-    if (appointmentData.id) {
-      await store.updateAppointment(appointmentData.id, updatedAppointment);
-      console.log("Cita actualizada exitosamente:", updatedAppointment);
-      await store.fetchAppointments();
+    // Actualizar la cita en Supabase
+    const { data, error } = await supabase
+      .from("appointments")
+      .update(updatedAppointment)
+      .eq("id", appointmentData.id)
+      .select();
+
+    if (error) {
+      console.error("Error al actualizar la cita en Supabase:", error.message);
+      Notify.create({
+        message: `Error al actualizar la cita: ${error.message}`,
+        color: "negative",
+        position: "top-right",
+      });
+      throw error;
+    }
+
+    if (data && data.length > 0) {
+      console.log("Cita actualizada exitosamente:", data[0]);
+      Notify.create({
+        message: "Cita actualizada exitosamente.",
+        color: "positive",
+        position: "top-right",
+      });
+      // Actualizar la cita en computedAppointments
+      const index = computedAppointments.value.findIndex(
+        (item) => item.id === data[0].id
+      );
+      if (index !== -1) {
+        computedAppointments.value[index] = {
+          ...data[0],
+          text: `${data[0].title} - ${selectedPatient.value}`,
+          startDate: new Date(data[0].startDate),
+          endDate: new Date(data[0].endDate),
+        };
+      }
+      // Opcional: Actualizar la store de citas si es necesario
+      appointmentsStore.fetchAppointments();
     } else {
-      console.error("No se encontró el ID de la cita para actualizar");
+      console.error("No se pudo obtener la cita actualizada de Supabase.");
+      Notify.create({
+        message: "No se pudo obtener la cita actualizada.",
+        color: "negative",
+        position: "top-right",
+      });
     }
   } catch (error) {
     console.error("Error al actualizar la cita:", error);
+    Notify.create({
+      message: `Error al actualizar la cita: ${error.message}`,
+      color: "negative",
+      position: "top-right",
+    });
   }
 };
 
+// Manejar la eliminación de citas
 const onAppointmentDeleted = async (e) => {
   try {
-    await store.deleteAppointment(e.appointmentData.id);
+    const { id } = e.appointmentData;
 
-    // Después de eliminar, recargar las citas
-    await store.fetchAppointments();
+    // Eliminar la cita en Supabase
+    const { error } = await supabase.from("appointments").delete().eq("id", id);
+
+    if (error) {
+      console.error("Error al eliminar la cita en Supabase:", error.message);
+      Notify.create({
+        message: `Error al eliminar la cita: ${error.message}`,
+        color: "negative",
+        position: "top-right",
+      });
+      throw error;
+    }
+
+    console.log("Cita eliminada exitosamente.");
+    Notify.create({
+      message: "Cita eliminada exitosamente.",
+      color: "positive",
+      position: "top-right",
+    });
+
+    // Remover la cita de computedAppointments
+    const index = computedAppointments.value.findIndex(
+      (item) => item.id === id
+    );
+    if (index !== -1) {
+      computedAppointments.value.splice(index, 1);
+    }
+    // Opcional: Actualizar la store de citas si es necesario
+    appointmentsStore.fetchAppointments();
   } catch (error) {
     console.error("Error al eliminar la cita:", error);
+    Notify.create({
+      message: `Error al eliminar la cita: ${error.message}`,
+      color: "negative",
+      position: "top-right",
+    });
   }
 };
 
@@ -497,6 +708,54 @@ const onPatientSelected = (e) => {
     isModalOpen.value = false;
   }
 };
+
+// Manejar selección de médico desde el modal
+const onDoctorSelected = (e) => {
+  const doctor = e.selectedRowsData[0];
+  if (doctor) {
+    const { nombre, id } = doctor;
+    selectedDoctor.value = nombre;
+    selectedDoctorId.value = id;
+
+    // Actualizar datos del formulario sin sobrescribir otros campos
+    if (appointmentForm.value && currentAppointmentData.value) {
+      currentAppointmentData.value.medico = id; // Almacena el ID del médico
+      appointmentForm.value.updateData(
+        "selectedDoctorName",
+        selectedDoctor.value
+      );
+    }
+
+    isDoctorModalOpen.value = false;
+  }
+};
+
+// Cargar datos al montar el componente
+onMounted(async () => {
+  try {
+    isPacientesLoading.value = true; // Si tienes una variable para cargar pacientes
+    await appointmentsStore.fetchAppointments();
+    await especialidadMedicaStore.cargarEspecialidades(); // Cargar especialidades primero
+    await medicoStore.cargarMedicos(); // Luego cargar médicos
+    await tiposCitasStore.cargarCitas();
+    await fichaIdentificacionStore.cargarDatos();
+    console.log("Datos de pacientes cargados:", formIdentificacion.value);
+    console.log("Especialidades cargadas:", especialidades.value);
+    console.log("Médicos cargados:", medicos.value);
+    console.log("Médicos con especialidad:", medicosConEspecialidad.value); // Log de médicos con especialidad
+  } catch (error) {
+    console.error("Error al cargar datos iniciales:", error);
+    Notify.create({
+      message: `Error al cargar datos iniciales: ${error.message}`,
+      color: "negative",
+      position: "top-right",
+    });
+  } finally {
+    isMedicosLoading.value = false;
+    isEspecialidadesLoading.value = false;
+    isPacientesLoading.value = false; // Finalizar la carga de pacientes si se inició
+  }
+});
 </script>
 
 <style scoped>

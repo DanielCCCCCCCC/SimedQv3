@@ -129,6 +129,24 @@
                       outlined
                       dense
                     />
+                    <q-select
+                      v-model="pacienteSeleccionado.medicoCabecera"
+                      :options="medicos"
+                      label="Médico de Cabecera"
+                      option-value="id"
+                      option-label="nombre"
+                      outlined
+                      dense
+                    />
+                    <q-select
+                      v-model="pacienteSeleccionado.referidoPor"
+                      :options="medicos"
+                      label="Referido Por"
+                      option-value="id"
+                      option-label="nombre"
+                      outlined
+                      dense
+                    />
                   </q-form>
                 </q-card>
               </q-tab-panel>
@@ -321,6 +339,11 @@
                       outlined
                       dense
                     />
+                    <q-checkbox
+                      v-model="pacienteSeleccionado.vih"
+                      label="VIH"
+                      dense
+                    />
                   </q-form>
                 </q-card>
               </q-tab-panel>
@@ -375,6 +398,8 @@ const pacienteSeleccionado = reactive({
   activo: false,
   tipo: null,
   medico: "",
+  medicoCabecera: null,
+  referidoPor: null,
   dni: "",
   nombres: "",
   apellidos: "",
@@ -396,6 +421,7 @@ const pacienteSeleccionado = reactive({
   ocupacion: "",
   grupoSanguineo: "",
   alergias: "",
+  vih: false,
 });
 
 // Computed para filtrar los municipios según el departamento seleccionado
@@ -463,6 +489,39 @@ const cambiarTab = ({ tab: nuevaTab, paciente }) => {
       }
     : null;
 
+  //
+  //
+  //
+  //
+  //
+  //
+  const medicoCabeceraSeleccionado = medicos.value.find(
+    (medico) => medico.id === paciente.medicoCabecera
+  );
+  pacienteSeleccionado.medicoCabecera = medicoCabeceraSeleccionado
+    ? {
+        id: medicoCabeceraSeleccionado.id,
+        nombre: medicoCabeceraSeleccionado.nombre,
+      }
+    : null;
+
+  // Nuevo: Referido Por
+  const referidoPorSeleccionado = medicos.value.find(
+    (medico) => medico.id === paciente.referidoPorId
+  );
+  pacienteSeleccionado.referidoPor = referidoPorSeleccionado
+    ? {
+        id: referidoPorSeleccionado.id,
+        nombre: referidoPorSeleccionado.nombre,
+      }
+    : null;
+
+  //
+  //
+  //
+  //
+  //
+  //
   const departamentoSeleccionado = departamentos.value.find(
     (depto) => depto.id === paciente.departamentoId
   );
@@ -530,6 +589,8 @@ const guardarDatosFormulario = () => {
 
       // Guardar tanto el ID como el nombre del médico
       medicoId: pacienteSeleccionado.medico?.id || null,
+      medicoCabecera: pacienteSeleccionado.medicoCabecera?.id || null, // Nuevo campo
+      referidoPorId: pacienteSeleccionado.referidoPor?.id || null, // Nuevo campo
       // medicoNombre: pacienteSeleccionado.medico?.nombre || null,
 
       dni: pacienteSeleccionado.dni,
@@ -562,7 +623,8 @@ const guardarDatosFormulario = () => {
       // grupoSanguineoDescripcion:
       //   pacienteSeleccionado.grupoSanguineo?.descripcion || "",
       alergias: pacienteSeleccionado.alergias,
-      vih: pacienteSeleccionado.vih ?? false,
+      vih: pacienteSeleccionado.vih ?? false, // Nuevo campo
+
       tenant_id: pacienteSeleccionado.tenant_id,
     });
   } else {
@@ -576,6 +638,9 @@ const guardarDatosFormulario = () => {
 
       // Guardar tanto el ID como el nombre del médico
       medicoId: pacienteSeleccionado.medico?.id || null,
+      medicoCabecera: pacienteSeleccionado.medicoCabecera?.id || null, // Nuevo campo
+      referidoPorId: pacienteSeleccionado.referidoPor?.id || null, // Nuevo campo
+
       // medicoNombre: pacienteSeleccionado.medico?.nombre || null,
 
       dni: pacienteSeleccionado.dni,
@@ -608,7 +673,8 @@ const guardarDatosFormulario = () => {
       // grupoSanguineoDescripcion:
       //   pacienteSeleccionado.grupoSanguineo?.descripcion || "",
       alergias: pacienteSeleccionado.alergias,
-      vih: pacienteSeleccionado.vih ?? false,
+      vih: pacienteSeleccionado.vih ?? false, // Nuevo campo
+
       tenant_id: pacienteSeleccionado.tenant_id,
     });
   }

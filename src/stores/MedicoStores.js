@@ -23,6 +23,7 @@ export const useMedicoStore = defineStore("medicoStore", () => {
           ...medico,
           especialidadId: Number(medico.especialidadId),
         }));
+        // console.log("Médicos cargados:", this.medicos); // Agregar este log
       }
     } catch (err) {
       console.error("Error al conectar con Supabase:", err);

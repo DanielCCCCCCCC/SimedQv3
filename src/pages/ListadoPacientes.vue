@@ -56,6 +56,12 @@
 
         <!-- Columnas de la tabla -->
         <DxColumn
+          data-field="codigo"
+          caption="Código"
+          :allow-editing="false"
+          :min-width="80"
+        />
+        <DxColumn
           data-field="fechaRegistro"
           caption="F. Registro"
           data-type="date"
@@ -63,28 +69,28 @@
           :visible="true"
         />
         <DxColumn
-          data-field="medicoNombre"
-          caption="Médico"
+          data-field="dni"
+          caption="DNI"
           :min-width="120"
           :visible="true"
         />
         <DxColumn
-          data-field="codigo"
-          caption="Código"
-          :allow-editing="false"
-          :min-width="80"
+          data-field="tipoDescripcion"
+          caption="Tipo"
+          :min-width="100"
+          :visible="true"
         />
         <DxColumn
           data-field="nombres"
           caption="Nombre"
           sort-order="asc"
-          :min-width="160"
+          :min-width="130"
         />
         <DxColumn
           data-field="apellidos"
           caption="Apellidos"
           sort-order="asc"
-          :min-width="160"
+          :min-width="130"
         />
         <DxColumn
           data-field="fechaNacimiento"
@@ -94,17 +100,24 @@
           :visible="false"
         />
         <DxColumn
-          data-field="tipoDescripcion"
-          caption="Tipo"
+          data-field="medicoNombre"
+          caption="Médico"
           :min-width="120"
           :visible="true"
         />
         <DxColumn
-          data-field="dni"
-          caption="DNI"
+          data-field="medicoCabeceraNombre"
+          caption="Médico Cabecera"
           :min-width="120"
           :visible="true"
         />
+        <DxColumn
+          data-field="referidoPorNombre"
+          caption="Referido Por"
+          :min-width="120"
+          :visible="true"
+        />
+
         <DxColumn
           data-field="activo"
           caption="Activo"
@@ -188,7 +201,15 @@ const pacientesConDetalles = computed(() => {
     const medico = (medicos.value || []).find(
       (medic) => medic.id === Number(paciente.medicoId)
     );
+    // Buscar el médico de cabecera
+    const medicoCabecera = (medicos.value || []).find(
+      (medic) => medic.id === Number(paciente.medicoCabecera)
+    );
 
+    // Buscar el médico que refirió
+    const referidoPor = (medicos.value || []).find(
+      (medic) => medic.id === Number(paciente.referidoPorId)
+    );
     // Buscar la descripción del tipo de paciente
     const tipoPaciente = (tpacientes.value || []).find(
       (tipo) => tipo.id === Number(paciente.tipoId)
@@ -197,6 +218,13 @@ const pacientesConDetalles = computed(() => {
     return {
       ...paciente,
       medicoNombre: medico ? medico.nombre : "Médico no encontrado",
+
+      medicoCabeceraNombre: medicoCabecera
+        ? medicoCabecera.nombre
+        : "No asignado",
+
+      referidoPorNombre: referidoPor ? referidoPor.nombre : "No asignado",
+
       tipoDescripcion: tipoPaciente
         ? tipoPaciente.descripcion
         : "Tipo no encontrado",

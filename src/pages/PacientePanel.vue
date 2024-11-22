@@ -11,23 +11,6 @@
       <div class="header-info">
         <div class="name-container">
           <p id="titulo">{{ form.nombres }} {{ form.apellidos }}</p>
-          <p v-if="!isEditable"></p>
-          <div v-else>
-            <!-- <q-input
-              v-model="form.nombres"
-              label="Nombre"
-              outlined
-              dense
-              :rules="[(val) => !!val || 'Este campo es obligatorio']"
-            />
-            <q-input
-              v-model="form.apellidos"
-              label="Apellido"
-              outlined
-              dense
-              :rules="[(val) => !!val || 'Este campo es obligatorio']"
-            /> -->
-          </div>
         </div>
         <span
           class="status"
@@ -52,6 +35,7 @@
       <!-- Información Personal -->
       <div class="detail-item">
         <h3 class="section-title">Información Personal</h3>
+        <!-- Nombres -->
         <q-input
           v-model="form.nombres"
           label="Nombre"
@@ -60,8 +44,11 @@
           v-if="isEditable"
           :rules="[(val) => !!val || 'Este campo es obligatorio']"
         />
-        <div v-else class="detail-text">{{ form.nombres }}</div>
+        <div v-else class="detail-text">
+          <span class="label">Nombre:</span> {{ form.nombres }}
+        </div>
 
+        <!-- Apellidos -->
         <q-input
           v-model="form.apellidos"
           label="Apellido"
@@ -70,8 +57,11 @@
           v-if="isEditable"
           :rules="[(val) => !!val || 'Este campo es obligatorio']"
         />
-        <div v-else class="detail-text">{{ form.apellidos }}</div>
+        <div v-else class="detail-text">
+          <span class="label">Apellido:</span> {{ form.apellidos }}
+        </div>
 
+        <!-- DNI -->
         <q-input
           v-model="form.dni"
           label="DNI"
@@ -80,8 +70,11 @@
           v-if="isEditable"
           :rules="[(val) => !!val || 'Este campo es obligatorio']"
         />
-        <div v-else class="detail-text">{{ form.dni }}</div>
+        <div v-else class="detail-text">
+          <span class="label">DNI:</span> {{ form.dni }}
+        </div>
 
+        <!-- Fecha de Nacimiento -->
         <q-input
           v-if="isEditable"
           v-model="form.fechaNacimiento"
@@ -91,6 +84,12 @@
           type="date"
           :rules="[(val) => !!val || 'Este campo es obligatorio']"
         />
+        <div v-else class="detail-text">
+          <span class="label">Fecha de Nacimiento:</span>
+          {{ form.fechaNacimiento }}
+        </div>
+
+        <!-- Sexo -->
         <q-input
           v-if="isEditable"
           v-model="form.sexo"
@@ -99,7 +98,11 @@
           dense
           :rules="[(val) => !!val || 'Este campo es obligatorio']"
         />
+        <div v-else class="detail-text">
+          <span class="label">Sexo:</span> {{ form.sexo }}
+        </div>
 
+        <!-- Estado Civil -->
         <q-select
           v-if="isEditable"
           v-model="form.estadoCivil"
@@ -111,21 +114,29 @@
           dense
           :rules="[(val) => !!val || 'Selecciona un estado civil']"
         />
+        <div v-else class="detail-text">
+          <span class="label">Estado Civil:</span>
+          {{ form.estadoCivil?.descripcion || "Sin asignar" }}
+        </div>
       </div>
 
       <!-- Datos de Contacto -->
       <div class="detail-item">
         <h3 class="section-title">Datos de Contacto</h3>
+        <!-- Teléfono Personal -->
         <q-input
           v-model="form.telPersonal"
-          label="Teléfono"
+          label="Teléfono Personal"
           outlined
           dense
           v-if="isEditable"
           :rules="[(val) => !!val || 'Este campo es obligatorio']"
         />
-        <div v-else class="detail-text">{{ form.telPersonal }}</div>
+        <div v-else class="detail-text">
+          <span class="label">Teléfono Personal:</span> {{ form.telPersonal }}
+        </div>
 
+        <!-- Teléfono Casa -->
         <q-input
           v-if="isEditable"
           v-model="form.telCasa"
@@ -133,6 +144,11 @@
           outlined
           dense
         />
+        <div v-else class="detail-text">
+          <span class="label">Teléfono Casa:</span> {{ form.telCasa }}
+        </div>
+
+        <!-- Email -->
         <q-input
           v-model="form.email"
           label="Correo"
@@ -141,8 +157,11 @@
           v-if="isEditable"
           :rules="[(val) => !!val || 'Este campo es obligatorio']"
         />
-        <div v-else class="detail-text">{{ form.email }}</div>
+        <div v-else class="detail-text">
+          <span class="label">Correo:</span> {{ form.email }}
+        </div>
 
+        <!-- Dirección -->
         <q-input
           v-model="form.direccion"
           label="Dirección"
@@ -151,8 +170,11 @@
           v-if="isEditable"
           :rules="[(val) => !!val || 'Este campo es obligatorio']"
         />
-        <div v-else class="detail-text">{{ form.direccion }}</div>
+        <div v-else class="detail-text">
+          <span class="label">Dirección:</span> {{ form.direccion }}
+        </div>
 
+        <!-- Departamento -->
         <q-select
           v-if="isEditable"
           v-model="form.departamento"
@@ -164,7 +186,12 @@
           dense
           :rules="[(val) => !!val || 'Selecciona un departamento']"
         />
+        <div v-else class="detail-text">
+          <span class="label">Departamento:</span>
+          {{ form.departamento?.descripcion || "Sin asignar" }}
+        </div>
 
+        <!-- Municipio -->
         <q-select
           v-if="isEditable"
           v-model="form.municipio"
@@ -176,7 +203,12 @@
           dense
           :rules="[(val) => !!val || 'Selecciona un municipio']"
         />
+        <div v-else class="detail-text">
+          <span class="label">Municipio:</span>
+          {{ form.municipio?.descripcion || "Sin asignar" }}
+        </div>
 
+        <!-- Organización -->
         <q-input
           v-model="form.organizacion"
           label="Organización"
@@ -184,10 +216,15 @@
           dense
           v-if="isEditable"
         />
+        <div v-else class="detail-text">
+          <span class="label">Organización:</span> {{ form.organizacion }}
+        </div>
       </div>
+
       <!-- Información Médica -->
       <div class="detail-item">
         <h3 class="section-title">Información Médica</h3>
+        <!-- Médico -->
         <q-select
           v-if="isEditable"
           v-model="form.medico"
@@ -200,9 +237,43 @@
           :rules="[(val) => !!val || 'Selecciona un médico']"
         />
         <div v-else class="detail-text">
+          <span class="label">Médico:</span>
           {{ form.medico?.nombre || "Sin asignar" }}
         </div>
 
+        <!-- Médico de Cabecera -->
+        <q-select
+          v-if="isEditable"
+          v-model="form.medicoCabecera"
+          :options="medicos"
+          option-value="id"
+          option-label="nombre"
+          label="Médico de Cabecera"
+          outlined
+          dense
+        />
+        <div v-else class="detail-text">
+          <span class="label">Médico de Cabecera:</span>
+          {{ form.medicoCabecera?.nombre || "Sin asignar" }}
+        </div>
+
+        <!-- Referido Por -->
+        <q-select
+          v-if="isEditable"
+          v-model="form.referidoPor"
+          :options="medicos"
+          option-value="id"
+          option-label="nombre"
+          label="Referido Por"
+          outlined
+          dense
+        />
+        <div v-else class="detail-text">
+          <span class="label">Referido Por:</span>
+          {{ form.referidoPor?.nombre || "Sin asignar" }}
+        </div>
+
+        <!-- Tipo de Paciente -->
         <q-select
           v-if="isEditable"
           v-model="form.tipo"
@@ -214,7 +285,12 @@
           dense
           :rules="[(val) => !!val || 'Selecciona un tipo de paciente']"
         />
+        <div v-else class="detail-text">
+          <span class="label">Tipo de Paciente:</span>
+          {{ form.tipo?.descripcion || "Sin asignar" }}
+        </div>
 
+        <!-- Grupo Sanguíneo -->
         <q-select
           v-if="isEditable"
           v-model="form.grupoSanguineo"
@@ -226,7 +302,12 @@
           dense
           :rules="[(val) => !!val || 'Selecciona un grupo sanguíneo']"
         />
+        <div v-else class="detail-text">
+          <span class="label">Grupo Sanguíneo:</span>
+          {{ form.grupoSanguineo?.descripcion || "Sin asignar" }}
+        </div>
 
+        <!-- Alergias -->
         <q-input
           v-if="isEditable"
           v-model="form.alergias"
@@ -234,6 +315,130 @@
           outlined
           dense
         />
+        <div v-else class="detail-text">
+          <span class="label">Alergias:</span> {{ form.alergias }}
+        </div>
+
+        <!-- VIH -->
+        <q-checkbox
+          v-model="form.vih"
+          label="VIH"
+          color="primary"
+          dense
+          v-if="isEditable"
+        />
+        <div v-else class="detail-text">
+          <span class="label">VIH:</span>
+          {{ form.vih ? "Positivo" : "Negativo" }}
+        </div>
+      </div>
+
+      <!-- Información Técnica -->
+      <div class="detail-item">
+        <h3 class="section-title">Información Técnica</h3>
+        <!-- Código -->
+        <q-input
+          v-model="form.codigo"
+          label="Código"
+          outlined
+          dense
+          v-if="isEditable"
+          :rules="[(val) => !!val || 'Este campo es obligatorio']"
+        />
+        <div v-else class="detail-text">
+          <span class="label">Código:</span> {{ form.codigo }}
+        </div>
+
+        <!-- Fecha de Registro -->
+        <div class="detail-text">
+          <span class="label">Fecha de Registro:</span>
+          {{ form.fechaRegistro }}
+        </div>
+      </div>
+
+      <!-- Información Familiar -->
+      <div class="detail-item">
+        <h3 class="section-title">Información Familiar</h3>
+        <!-- Cónyuge -->
+        <q-input
+          v-model="form.conyugue"
+          label="Cónyuge"
+          outlined
+          dense
+          v-if="isEditable"
+        />
+        <div v-else class="detail-text">
+          <span class="label">Cónyuge:</span> {{ form.conyugue }}
+        </div>
+
+        <!-- Madre -->
+        <q-input
+          v-model="form.madre"
+          label="Madre"
+          outlined
+          dense
+          v-if="isEditable"
+        />
+        <div v-else class="detail-text">
+          <span class="label">Madre:</span> {{ form.madre }}
+        </div>
+
+        <!-- Padre -->
+        <q-input
+          v-model="form.padre"
+          label="Padre"
+          outlined
+          dense
+          v-if="isEditable"
+        />
+        <div v-else class="detail-text">
+          <span class="label">Padre:</span> {{ form.padre }}
+        </div>
+      </div>
+
+      <!-- Más Datos -->
+      <div class="detail-item">
+        <h3 class="section-title">Más Datos</h3>
+        <!-- Escolaridad -->
+        <q-select
+          v-if="isEditable"
+          v-model="form.escolaridad"
+          :options="escolaridades"
+          option-value="id"
+          option-label="descripcion"
+          label="Escolaridad"
+          outlined
+          dense
+        />
+        <div v-else class="detail-text">
+          <span class="label">Escolaridad:</span>
+          {{ form.escolaridad?.descripcion || "Sin asignar" }}
+        </div>
+
+        <!-- Ocupación -->
+        <q-input
+          v-model="form.ocupacion"
+          label="Ocupación"
+          outlined
+          dense
+          v-if="isEditable"
+        />
+        <div v-else class="detail-text">
+          <span class="label">Ocupación:</span> {{ form.ocupacion }}
+        </div>
+
+        <!-- Observaciones -->
+        <q-input
+          v-model="form.observaciones"
+          label="Observaciones"
+          outlined
+          dense
+          type="textarea"
+          v-if="isEditable"
+        />
+        <div v-else class="detail-text">
+          <span class="label">Observaciones:</span> {{ form.observaciones }}
+        </div>
       </div>
     </div>
 
@@ -257,6 +462,7 @@
     <p>@Dios te bendiga</p>
   </div>
 </template>
+
 <script>
 import { ref, reactive, computed, watch, onMounted } from "vue";
 import { useFichaIdentificacionStore } from "../stores/fichaIdentificacionStores";
@@ -283,8 +489,41 @@ export default {
   setup(props) {
     const fichaIdentificacionStore = useFichaIdentificacionStore();
     const { actualizarPaciente } = fichaIdentificacionStore;
-    const form = reactive({ ...props.paciente });
     const isEditable = ref(false);
+
+    // Definir el formulario con todos los campos
+    const form = reactive({
+      id: null,
+      fechaRegistro: "",
+      codigo: "",
+      activo: false,
+      tipo: null,
+      medico: null,
+      medicoCabecera: null,
+      referidoPor: null,
+      dni: "",
+      nombres: "",
+      apellidos: "",
+      fechaNacimiento: "",
+      sexo: "",
+      estadoCivil: null,
+      direccion: "",
+      telCasa: "",
+      telPersonal: "",
+      email: "",
+      departamento: null,
+      municipio: null,
+      organizacion: "",
+      conyugue: "",
+      madre: "",
+      padre: "",
+      escolaridad: null,
+      ocupacion: "",
+      grupoSanguineo: null,
+      alergias: "",
+      vih: false,
+      observaciones: "",
+    });
 
     const {
       tpacientes,
@@ -312,6 +551,30 @@ export default {
     });
 
     const setSelectedValues = () => {
+      // Asignar valores simples
+      form.id = props.paciente.id || null;
+      form.fechaRegistro = props.paciente.fechaRegistro || "";
+      form.codigo = props.paciente.codigo || "";
+      form.activo = props.paciente.activo || false;
+      form.dni = props.paciente.dni || "";
+      form.nombres = props.paciente.nombres || "";
+      form.apellidos = props.paciente.apellidos || "";
+      form.fechaNacimiento = props.paciente.fechaNacimiento || "";
+      form.sexo = props.paciente.sexo || "";
+      form.direccion = props.paciente.direccion || "";
+      form.telCasa = props.paciente.telCasa || "";
+      form.telPersonal = props.paciente.telPersonal || "";
+      form.email = props.paciente.email || "";
+      form.organizacion = props.paciente.organizacion || "";
+      form.conyugue = props.paciente.conyugue || "";
+      form.madre = props.paciente.madre || "";
+      form.padre = props.paciente.padre || "";
+      form.ocupacion = props.paciente.ocupacion || "";
+      form.alergias = props.paciente.alergias || "";
+      form.vih = props.paciente.vih || false;
+      form.observaciones = props.paciente.observaciones || "";
+
+      // Asignar objetos seleccionados
       form.tipo =
         tpacientes.value.find((tipo) => tipo.id === props.paciente.tipoId) ||
         null;
@@ -319,6 +582,16 @@ export default {
       form.medico =
         medicos.value.find((medico) => medico.id === props.paciente.medicoId) ||
         null;
+
+      form.medicoCabecera =
+        medicos.value.find(
+          (medico) => medico.id === props.paciente.medicoCabecera
+        ) || null;
+
+      form.referidoPor =
+        medicos.value.find(
+          (medico) => medico.id === props.paciente.referidoPorId
+        ) || null;
 
       form.estadoCivil =
         estadosCiviles.value.find(
@@ -348,14 +621,15 @@ export default {
 
     watch(
       () => props.paciente,
-      (newPaciente) => {
-        Object.assign(form, newPaciente);
+      () => {
         setSelectedValues();
       },
       { immediate: true, deep: true }
     );
 
-    onMounted(setSelectedValues);
+    onMounted(() => {
+      setSelectedValues();
+    });
 
     const toggleEdit = () => {
       isEditable.value = !isEditable.value;
@@ -386,29 +660,32 @@ export default {
         fechaRegistro: form.fechaRegistro,
         codigo: form.codigo,
         activo: form.activo,
-        tipoId: form.tipo?.id,
-        medicoId: form.medico?.id,
+        tipoId: form.tipo?.id || null,
+        medicoId: form.medico?.id || null,
+        medicoCabecera: form.medicoCabecera?.id || null,
+        referidoPorId: form.referidoPor?.id || null,
         dni: form.dni,
         nombres: form.nombres,
         apellidos: form.apellidos,
         fechaNacimiento: form.fechaNacimiento,
         sexo: form.sexo,
-        estadoCivilId: form.estadoCivil?.id,
+        estadoCivilId: form.estadoCivil?.id || null,
         direccion: form.direccion,
         telCasa: form.telCasa,
         telPersonal: form.telPersonal,
         email: form.email,
-        departamentoId: form.departamento?.id,
-        municipioId: form.municipio?.id,
+        departamentoId: form.departamento?.id || null,
+        municipioId: form.municipio?.id || null,
         organizacion: form.organizacion,
         conyugue: form.conyugue,
         madre: form.madre,
         padre: form.padre,
-        escolaridadId: form.escolaridad?.id,
+        escolaridadId: form.escolaridad?.id || null,
         ocupacion: form.ocupacion,
-        grupoSanguineoId: form.grupoSanguineo?.id,
+        grupoSanguineoId: form.grupoSanguineo?.id || null,
         alergias: form.alergias,
         vih: form.vih ?? false,
+        observaciones: form.observaciones,
       };
 
       actualizarPaciente(pacienteActualizado)

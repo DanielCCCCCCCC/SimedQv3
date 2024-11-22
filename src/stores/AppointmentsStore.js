@@ -23,14 +23,29 @@ export const useAppointmentsStore = defineStore("appointments", {
       }
     },
     async addAppointment(appointment) {
-      const { data, error } = await supabase
-        .from("appointments")
-        .insert([appointment]);
-      if (error) {
-        console.error("Error al guardar la cita en Supabase:", error);
-      } else {
-        this.appointments.push(data[0]);
-        this.calculateAppointmentsTrend();
+      try {
+        const { data, error } = await supabase
+          .from("appointments")
+          .insert([appointment])
+          .select(); // Asegúrate de incluir .select() para obtener los datos insertados
+
+        if (error) {
+          console.error("Error inserting appointment:", error);
+          throw error;
+        }
+
+        if (data && data.length > 0) {
+          // Cita agregada exitosamente
+          return data[0];
+        } else {
+          console.error(
+            "No se recibieron datos de Supabase después de insertar la cita."
+          );
+          throw new Error("No data returned from Supabase.");
+        }
+      } catch (error) {
+        console.error("Error en addAppointment:", error);
+        throw error;
       }
     },
     async updateAppointment(id, updates) {
