@@ -15,13 +15,11 @@ function saveToLocalStorage(key, value) {
 }
 
 //
-//
-//
-//
-//
-//
 
 // Tienda para Hospitales
+
+// DirectoriosStores.js
+
 export const useHospitalStore = defineStore("hospitalStore", () => {
   const hospitales = ref([]);
   const hospitalSeleccionado = ref(null); // Para manejar el hospital que se está editando
@@ -124,14 +122,7 @@ export const useHospitalStore = defineStore("hospitalStore", () => {
     actualizarHospital,
   };
 });
-//
-//
-//
-//
-//
-//
-//
-///
+
 ///Tienda para Medicamentos
 export const useMedicamentoStore = defineStore("medicamentoStore", () => {
   const medicamentos = ref([]);
@@ -287,11 +278,39 @@ export const useEstudioStore = defineStore("examenesEstudios", () => {
     }
     onMounted(cargarEstudios);
   };
+  const actualizarEstudio = async (estudioInfo) => {
+    try {
+      const { data, error } = await supabase
+        .from("examenesEstudios")
+        .update({
+          ...estudioInfo,
+          updated_at: new Date().toISOString(), // Actualizamos la fecha de modificación
+        })
+        .eq("id", estudioInfo.id);
 
+      if (error) {
+        console.error("Error al actualizar estudio:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // Actualiza el array local con los datos modificados
+        const index = estudios.value.findIndex((e) => e.id === estudioInfo.id);
+        if (index !== -1) {
+          estudios.value[index] = { ...data[0] };
+        }
+      }
+
+      console.log("Estudio actualizado:", data);
+    } catch (err) {
+      console.error("Error en actualizarEstudio:", err.message);
+    }
+  };
   return {
     estudios,
     cargarEstudios,
     agregarEstudio,
     eliminarEstudio,
+    actualizarEstudio,
   };
 });

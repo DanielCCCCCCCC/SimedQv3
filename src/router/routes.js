@@ -1,11 +1,11 @@
-import FormContactos from "../pages/FormContactos.vue"; // Asegúrate de tener este archivo con el código de tu formulario
+import FormContactos from "../pages/FormContactos.vue";
 import ListadoMedicos from "src/pages/ListadoMedicos.vue";
 import FormDiagnosticos from "src/pages/FormDiagnosticos.vue";
 import FormConfiMedicas from "src/pages/FormConfiMedicas.vue";
 import FormDirectorios from "src/pages/FormDirectorios.vue";
 import FormDirectorioPacientes from "src/pages/FormDirectorioPacientes.vue";
 import SchedulerControlCita from "src/pages/SchedulerControlCita.vue";
-import SchedulerControlCitaCopy from "src/pages/SchedulerControlCitaCopy.vue";
+import SchedulerControlCitaCopy from "src/pages/SchedulerControlCitacopy.vue";
 import FormDatosGenerales from "src/pages/FormDatosGenerales.vue";
 import FormMedicos from "src/pages/FormMedicos.vue";
 const routes = [

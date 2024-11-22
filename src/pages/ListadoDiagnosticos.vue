@@ -1,39 +1,6 @@
 <template>
-  <div class="row">
-    <h4 class="header-title">Diagnósticos</h4>
-  </div>
-
-  <!-- Vista de tarjetas para dispositivos móviles -->
-  <div v-if="isMobileView" class="card-container">
-    <div
-      v-for="diagnostico in diagnosticos"
-      :key="diagnostico.id"
-      class="diagnostico-card"
-    >
-      <h5>{{ diagnostico.descripcion }}</h5>
-      <p>
-        <strong>Clasificación:</strong>
-        {{ diagnostico.clasificacionDescripcion }}
-      </p>
-      <div class="card-actions">
-        <q-btn
-          icon="edit"
-          label="Editar"
-          color="primary"
-          @click="onEditButtonClick(diagnostico)"
-        />
-        <q-btn
-          icon="delete"
-          label="Eliminar"
-          color="negative"
-          @click="onDeleteButtonClick(diagnostico.id)"
-        />
-      </div>
-    </div>
-  </div>
-
-  <!-- DataGrid para pantallas grandes -->
-  <div v-else id="app-container" class="q-mb-xl">
+  <q-card class="q-pa-sm q-mt-md bg-grey-1 rounded shadow-2xl">
+    <!-- DataGrid para diagnósticos -->
     <DxDataGrid
       :data-source="diagnosticos"
       :allow-column-reordering="true"
@@ -42,113 +9,202 @@
       :row-alternation-enabled="true"
       key-expr="id"
     >
-      <DxScrolling mode="virtual" />
-      <DxColumnChooser :enabled="true" />
-      <DxSorting mode="multiple" />
-      <DxHeaderFilter :visible="true" />
-      <DxLoadPanel :show-pane="true" />
-
-      <!-- Columnas para descripción y clasificación -->
+      <!-- Columnas -->
+      <DxColumn data-field="descripcion" caption="Descripción" />
+      <!-- Columna con lookup para mostrar nombre de clasificación -->
       <DxColumn
-        data-field="descripcion"
-        caption="Descripción"
-        :allow-sorting="true"
-        min-width="150"
-        width="200"
-      />
-      <DxColumn
-        data-field="clasificacionDescripcion"
+        data-field="clasificacionId"
         caption="Clasificación"
-        :allow-sorting="true"
-        min-width="150"
-        width="200"
-      />
-
-      <!-- Botones de acción -->
-      <DxColumn type="buttons">
-        <DxButton name="edit" icon="edit" />
-        <DxButton name="delete" icon="trash" @click="onDeleteButtonClick" />
-      </DxColumn>
-
-      <!-- Configuración de edición -->
-      <DxEditing
-        mode="popup"
-        :allow-updating="true"
-        :allow-adding="true"
-        :allow-deleting="true"
-        :popup="{
-          title: 'Editar Diagnóstico',
-          showTitle: true,
-          width: 500,
-          height: 300,
+        :lookup="{
+          dataSource: clasificaciones,
+          valueExpr: 'id',
+          displayExpr: 'nombre',
         }"
       />
-
-      <!-- Paginación y filtros -->
-      <DxPaging :enabled="true" :page-size="10" />
-      <DxFilterRow :visible="true" />
-      <DxHeaderFilter :visible="true" />
+      <!-- Botones de acción -->
+      <DxColumn type="buttons">
+        <DxButton icon="edit" hint="Editar" @click="abrirFormularioEdicion" />
+        <DxButton icon="trash" hint="Eliminar" @click="eliminarDiagnostico" />
+      </DxColumn>
     </DxDataGrid>
-  </div>
+
+    <!-- Formulario de edición (ventana modal) -->
+    <q-dialog v-model="mostrarDialogo">
+      <q-card style="min-width: 500px">
+        <q-card-section>
+          <div class="text-h6">Editar Diagnóstico</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit.prevent="guardarCambios">
+            <q-input
+              v-model="diagnosticoSeleccionado.descripcion"
+              label="Descripción"
+              required
+              outlined
+            />
+            <q-select
+              v-model="diagnosticoSeleccionado.clasificacionId"
+              :options="clasificaciones"
+              option-value="id"
+              option-label="nombre"
+              label="Clasificación"
+              outlined
+              dense
+              required
+              emit-value
+              map-options
+            />
+
+            <div class="q-mt-md">
+              <q-btn label="Guardar" color="primary" type="submit" />
+              <q-btn
+                label="Cancelar"
+                color="negative"
+                flat
+                @click="cerrarDialogo"
+              />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+  </q-card>
 </template>
 
 <script setup>
-import {
-  DxDataGrid,
-  DxColumn,
-  DxPaging,
-  DxFilterRow,
-  DxHeaderFilter,
-  DxEditing,
-  DxButton,
-  DxColumnChooser,
-  DxScrolling,
-  DxSorting,
-  DxLoadPanel,
-} from "devextreme-vue/data-grid";
+import { DxDataGrid, DxColumn, DxButton } from "devextreme-vue/data-grid";
 import { useDiagnosticosStore } from "../stores/DiagnosticosStores";
-import { Notify } from "quasar";
+import { useClasificacionDiagnosticosStore } from "../stores/DiagnosticosStores";
 import { storeToRefs } from "pinia";
-import { onMounted, computed } from "vue";
+import { Notify } from "quasar";
+import { ref, onMounted } from "vue";
 
-// Acceder a la tienda de diagnósticos
-const diagnosticoStore = useDiagnosticosStore();
-const { diagnosticos } = storeToRefs(diagnosticoStore);
+// Acceder a las tiendas
+const diagnosticosStore = useDiagnosticosStore();
+const clasificacionStore = useClasificacionDiagnosticosStore();
 
-// Computed para detectar si la vista es móvil
-const isMobileView = computed(() => window.innerWidth < 600);
+// Datos de las tiendas
+const { diagnosticos } = storeToRefs(diagnosticosStore);
+const { clasificaciones } = storeToRefs(clasificacionStore);
 
-// Método para eliminar un diagnóstico
-const onDeleteButtonClick = async (id) => {
+// Estado para el modal y diagnóstico seleccionado
+const mostrarDialogo = ref(false);
+const diagnosticoSeleccionado = ref({});
+
+// Cargar datos al montar el componente
+onMounted(async () => {
+  await Promise.all([
+    diagnosticosStore.cargarDiagnosticos(),
+    clasificacionStore.cargarClasificaciones(),
+  ]);
+});
+
+// Asignar las descripciones al abrir el modal
+const asignarDescripciones = (diagnostico) => {
+  return { ...diagnostico };
+};
+
+// diagnosticoSeleccionado.value = { ...diagnostico };
+
+// Abrir el formulario de edición
+const abrirFormularioEdicion = (e) => {
+  const diagnostico = e.row.data;
+
+  // Asignar las descripciones de clasificacionId
+  console.log("Abriendo formulario para diagnóstico:", diagnostico);
+  diagnosticoSeleccionado.value = asignarDescripciones(diagnostico);
+
+  mostrarDialogo.value = true;
+};
+
+// Guardar los cambios del formulario
+const guardarCambios = async () => {
   try {
-    await diagnosticoStore.eliminarDiagnostico(id);
+    // Si clasificacionId es un objeto, toma solo su ID
+    // diagnosticoSeleccionado.value.clasificacionId =
+    //   typeof diagnosticoSeleccionado.value.clasificacionId === "object"
+    //     ? diagnosticoSeleccionado.value.clasificacionId.id
+    //     : diagnosticoSeleccionado.value.clasificacionId;
+
+    console.log(
+      "Guardando diagnóstico con los datos:",
+      diagnosticoSeleccionado.value
+    );
+
+    // Extraer el id y los datos a actualizar
+    const id = diagnosticoSeleccionado.value.id;
+    const datos = {
+      descripcion: diagnosticoSeleccionado.value.descripcion,
+      clasificacionId: diagnosticoSeleccionado.value.clasificacionId,
+    };
+
+    // Verificar que tenemos un id y una descripción antes de continuar
+    if (!id || !datos.descripcion) {
+      Notify.create({
+        type: "negative",
+        message: "La descripción es obligatoria",
+        position: "top-right",
+      });
+      return;
+    }
+
+    // Actualizar el diagnóstico en el store
+    await diagnosticosStore.actualizarDiagnostico(id, datos);
+
+    // Recargar diagnósticos
+    await diagnosticosStore.cargarDiagnosticos();
+
+    // Mostrar notificación de éxito
     Notify.create({
-      message: "Diagnóstico eliminado exitosamente",
-      color: "positive",
+      type: "positive",
+      message: "Diagnóstico actualizado con éxito",
+      position: "top-right",
+    });
+
+    // Cerrar el diálogo
+    cerrarDialogo();
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al actualizar el diagnóstico",
+      position: "top-right",
+    });
+    console.error("Error al guardar cambios:", error);
+  }
+};
+
+// Cerrar el modal
+const cerrarDialogo = () => {
+  console.log("Cerrando diálogo de edición.");
+  mostrarDialogo.value = false;
+  diagnosticoSeleccionado.value = {}; // Resetear el diagnóstico seleccionado
+};
+
+// Eliminar diagnóstico
+const eliminarDiagnostico = async (e) => {
+  try {
+    console.log("Eliminando diagnóstico con id:", e.row.data.id);
+    await diagnosticosStore.eliminarDiagnostico(e.row.data.id);
+    // Recargar diagnósticos
+    await diagnosticosStore.cargarDiagnosticos();
+    Notify.create({
+      type: "negative",
+      message: "Diagnóstico eliminado",
       position: "top-right",
     });
   } catch (error) {
     Notify.create({
+      type: "negative",
       message: "Error al eliminar el diagnóstico",
-      color: "negative",
       position: "top-right",
     });
     console.error("Error al eliminar diagnóstico:", error);
   }
 };
-
-onMounted(async () => {
-  await diagnosticoStore.cargarDiagnosticos();
-});
 </script>
-<!--
-<style scoped>
-#app-container {
-  padding: 0 4px;
-  background-color: #f9f9f9;
-  width: 100%;
-}
 
+<style scoped>
 .custom-data-grid {
   background-color: #ffffff;
   border-radius: 8px;
@@ -156,36 +212,7 @@ onMounted(async () => {
   width: 100%;
 }
 
-.header-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  text-align: center;
+.q-card {
+  margin: auto;
 }
-
-.card-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-
-.diagnostico-card {
-  border: 1px solid #ddd;
-  padding: 16px;
-  border-radius: 8px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.diagnostico-card h5 {
-  margin: 0 0 8px;
-  font-size: 1.2em;
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-</style> -->
+</style>

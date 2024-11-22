@@ -26,8 +26,15 @@
       <DxColumn data-field="precioCosto" caption="Precio Costo" />
       <DxColumn data-field="precioVenta" caption="Precio Venta" />
       <DxColumn data-field="facturar" caption="Facturar" />
-      <DxColumn data-field="status" caption="Status" />
-
+      <DxColumn
+        data-field="status"
+        caption="Status"
+        :lookup="{
+          dataSource: statuses,
+          valueExpr: 'id',
+          displayExpr: 'descripcion',
+        }"
+      />
       <!-- Botones de acción -->
       <DxColumn type="buttons">
         <DxButton icon="edit" hint="Editar" @click="abrirFormularioEdicion" />
@@ -56,7 +63,6 @@
               required
               outlined
             />
-            <!-- Selector de tipo de medicamentos -->
             <q-select
               v-model="medicamentoSeleccionado.tipoId"
               :options="tiposMedicamentos"
@@ -92,7 +98,9 @@
             />
             <q-select
               v-model="medicamentoSeleccionado.status"
-              :options="statusOptions"
+              :options="statuses"
+              option-value="id"
+              option-label="descripcion"
               label="Status"
               outlined
               dense
@@ -116,6 +124,7 @@
 import { DxDataGrid, DxColumn, DxButton } from "devextreme-vue/data-grid";
 import { useMedicamentoStore } from "../stores/DirectoriosStores";
 import { useTiposMedicamentosStore } from "../stores/ConfiMedicasStores";
+import { useStatusStore } from "../stores/status";
 import { storeToRefs } from "pinia";
 import { Notify } from "quasar";
 import { ref, onMounted } from "vue";
@@ -123,17 +132,12 @@ import { ref, onMounted } from "vue";
 // Acceder a las tiendas
 const medicamentoStore = useMedicamentoStore();
 const tiposMedicamentosStore = useTiposMedicamentosStore();
+const statusStore = useStatusStore();
 
 // Datos de las tiendas
 const { medicamentos, medicamentoSeleccionado } = storeToRefs(medicamentoStore);
 const { medicamentos: tiposMedicamentos } = storeToRefs(tiposMedicamentosStore);
-
-// Opciones para el campo "Status"
-const statusOptions = [
-  { label: "Disponible", value: "disponible" },
-  { label: "No disponible", value: "no_disponible" },
-  { label: "Pendiente", value: "pendiente" },
-];
+const { statuses } = storeToRefs(statusStore);
 
 // Estado para el modal
 const mostrarDialogo = ref(false);
@@ -143,22 +147,42 @@ onMounted(async () => {
   await Promise.all([
     medicamentoStore.cargarMedicamentos(),
     tiposMedicamentosStore.cargarMedicamentos(),
+    statusStore.cargarStatuses(),
   ]);
 });
+
+// Asignar las descripciones al abrir el modal
+const asignarDescripciones = (medicamento) => {
+  console.log("Asignando descripciones para medicamento:", medicamento);
+
+  const tipo = tiposMedicamentos.value.find((t) => t.id === medicamento.tipoId);
+  if (!tipo) {
+    console.warn(`No se encontró el tipo con id: ${medicamento.tipoId}`);
+  } else {
+    console.log(`Tipo asignado:`, tipo);
+  }
+
+  const status = statuses.value.find((s) => s.id === medicamento.status);
+  if (!status) {
+    console.warn(`No se encontró el status con id: ${medicamento.status}`);
+  } else {
+    console.log(`Status asignado:`, status);
+  }
+
+  return {
+    ...medicamento,
+    tipoId: tipo || { id: null, descripcion: "Sin tipo asignado" },
+    status: status || { id: null, descripcion: "Sin status asignado" },
+  };
+};
 
 // Abrir el formulario de edición
 const abrirFormularioEdicion = (e) => {
   const medicamento = e.row.data;
 
-  // Busca el tipo completo basado en el tipoId
-  const tipoEncontrado = tiposMedicamentos.value.find(
-    (tipo) => tipo.id === medicamento.tipoId
-  );
-
-  medicamentoSeleccionado.value = {
-    ...medicamento,
-    tipoId: tipoEncontrado || medicamento.tipoId, // Asigna el objeto del tipo si lo encuentra
-  };
+  // Asignar las descripciones de tipoId y status
+  console.log("Abriendo formulario para medicamento:", medicamento);
+  medicamentoSeleccionado.value = asignarDescripciones(medicamento);
 
   mostrarDialogo.value = true;
 };
@@ -166,20 +190,36 @@ const abrirFormularioEdicion = (e) => {
 // Guardar los cambios del formulario
 const guardarCambios = async () => {
   try {
-    // Convierte el tipo seleccionado de vuelta a su ID
-    const tipoId =
+    // Si tipoId o status son objetos, toma solo sus IDs
+    medicamentoSeleccionado.value.tipoId =
       typeof medicamentoSeleccionado.value.tipoId === "object"
         ? medicamentoSeleccionado.value.tipoId.id
         : medicamentoSeleccionado.value.tipoId;
 
-    medicamentoSeleccionado.value.tipoId = tipoId;
+    medicamentoSeleccionado.value.status =
+      typeof medicamentoSeleccionado.value.status === "object"
+        ? medicamentoSeleccionado.value.status.id
+        : medicamentoSeleccionado.value.status;
 
+    console.log(
+      "Guardando medicamento con los datos:",
+      medicamentoSeleccionado.value
+    );
+
+    // Actualizar el medicamento en el store
     await medicamentoStore.actualizarMedicamento(medicamentoSeleccionado.value);
+
+    // Recargar medicamentos
+    await medicamentoStore.cargarMedicamentos();
+
+    // Mostrar notificación de éxito
     Notify.create({
       type: "positive",
       message: "Medicamento actualizado con éxito",
       position: "top-right",
     });
+
+    // Cerrar el diálogo
     cerrarDialogo();
   } catch (error) {
     Notify.create({
@@ -193,6 +233,7 @@ const guardarCambios = async () => {
 
 // Cerrar el modal
 const cerrarDialogo = () => {
+  console.log("Cerrando diálogo de edición.");
   mostrarDialogo.value = false;
   medicamentoStore.setMedicamentoSeleccionado(null);
 };
@@ -200,6 +241,7 @@ const cerrarDialogo = () => {
 // Eliminar medicamento
 const eliminarMedicamento = async (e) => {
   try {
+    console.log("Eliminando medicamento con id:", e.row.data.id);
     await medicamentoStore.eliminarMedicamento(e.row.data.id);
     Notify.create({
       type: "negative",

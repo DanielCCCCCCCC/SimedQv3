@@ -1,32 +1,6 @@
 <template>
-  <div class="row">
-    <h4 class="header-title">Estudios</h4>
-  </div>
-
-  <!-- Vista de tarjetas para pantallas pequeñas -->
-  <div v-if="isMobileView" class="card-container">
-    <div v-for="estudio in estudios" :key="estudio.id" class="estudio-card">
-      <h5>{{ estudio.descripcion }}</h5>
-      <p><strong>Fecha de Creación:</strong> {{ estudio.created_at }}</p>
-      <div class="card-actions">
-        <q-btn
-          icon="edit"
-          label="Editar"
-          color="primary"
-          @click="onEditButtonClick(estudio)"
-        />
-        <q-btn
-          icon="delete"
-          label="Eliminar"
-          color="negative"
-          @click="onDeleteButtonClick(estudio.id)"
-        />
-      </div>
-    </div>
-  </div>
-
-  <!-- DataGrid para pantallas grandes -->
-  <div v-else id="app-container" class="q-mb-xl">
+  <q-card class="q-pa-sm q-mt-md bg-grey-1 rounded shadow-2xl">
+    <!-- DataGrid para estudios -->
     <DxDataGrid
       :data-source="estudios"
       :allow-column-reordering="true"
@@ -35,170 +9,225 @@
       :row-alternation-enabled="true"
       key-expr="id"
     >
-      <!-- Columnas de Estudios -->
+      <!-- Columnas -->
+      <DxColumn data-field="codigo" caption="Código" />
+      <DxColumn data-field="descripcion" caption="Descripción" />
+      <!-- Columna con lookup para mostrar descripción del tipo -->
       <DxColumn
-        data-field="descripcion"
-        caption="Tipo de Estudio"
-        :allow-sorting="true"
-      />
-      <DxColumn
-        data-field="created_at"
-        caption="Fecha de Creación"
-        data-type="date"
-        :allow-sorting="true"
-      />
-
-      <!-- Columna de botones de acción -->
-      <DxColumn type="buttons">
-        <DxButton name="edit" icon="edit" @click="onEditButtonClick" />
-        <DxButton name="delete" icon="trash" @click="onDeleteButtonClick" />
-      </DxColumn>
-
-      <!-- Resumen de estudios -->
-      <DxSummary>
-        <DxGroupItem summary-type="count" display-format="{0} estudios" />
-      </DxSummary>
-
-      <!-- Edición de datos en ventana modal -->
-      <DxEditing
-        mode="popup"
-        :allow-updating="true"
-        :allow-adding="true"
-        :allow-deleting="true"
-        :popup="{
-          title: 'Editar Información del Estudio',
-          showTitle: true,
-          width: 700,
-          height: 400,
+        data-field="tipoId"
+        caption="Tipo"
+        :lookup="{
+          dataSource: tiposEstudios,
+          valueExpr: 'id',
+          displayExpr: 'descripcion',
         }"
       />
-
-      <!-- Paginación y filtros -->
-      <DxPaging :enabled="true" :page-size="10" />
-      <DxFilterRow :visible="true" />
-      <DxHeaderFilter :visible="true" />
-      <DxColumnChooser :enabled="true" />
-      <DxSearchPanel :visible="true" />
+      <DxColumn data-field="indicaciones" caption="Indicaciones" />
+      <DxColumn data-field="precioCosto" caption="Precio Costo" />
+      <DxColumn data-field="precioVenta" caption="Precio Venta" />
+      <!-- Columna con lookup para mostrar descripción del status -->
+      <DxColumn
+        data-field="status"
+        caption="Status"
+        :lookup="{
+          dataSource: statusExamenEstudios,
+          valueExpr: 'id',
+          displayExpr: 'descripcion',
+        }"
+      />
+      <!-- Botones de acción -->
+      <DxColumn type="buttons">
+        <DxButton
+          icon="edit"
+          hint="Editar"
+          @click="abrirFormularioEdicion($event.row.data)"
+        />
+        <DxButton icon="trash" hint="Eliminar" @click="eliminarEstudio" />
+      </DxColumn>
     </DxDataGrid>
-  </div>
-</template>
 
+    <!-- Formulario de edición (ventana modal) -->
+    <q-dialog v-model="mostrarDialogo">
+      <q-card style="min-width: 500px">
+        <q-card-section>
+          <div class="text-h6">Editar Estudio</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit.prevent="guardarCambios">
+            <q-input
+              v-model="estudioSeleccionado.codigo"
+              label="Código"
+              disable
+              outlined
+            />
+            <q-input
+              v-model="estudioSeleccionado.descripcion"
+              label="Descripción"
+              required
+              outlined
+            />
+            <q-select
+              v-model="estudioSeleccionado.tipoId"
+              :options="tiposEstudios"
+              option-value="id"
+              option-label="descripcion"
+              label="Tipo de estudio"
+              outlined
+              dense
+              required
+            />
+            <q-input
+              v-model="estudioSeleccionado.indicaciones"
+              label="Indicaciones"
+              type="textarea"
+              outlined
+            />
+            <q-input
+              v-model="estudioSeleccionado.precioCosto"
+              label="Precio Costo"
+              type="number"
+              outlined
+            />
+            <q-input
+              v-model="estudioSeleccionado.precioVenta"
+              label="Precio Venta"
+              type="number"
+              outlined
+            />
+            <q-select
+              v-model="estudioSeleccionado.status"
+              :options="statusExamenEstudios"
+              option-value="id"
+              option-label="descripcion"
+              label="Status"
+              outlined
+              dense
+            />
+            <div class="q-mt-md">
+              <q-btn label="Guardar" color="primary" type="submit" />
+              <q-btn
+                label="Cancelar"
+                color="negative"
+                flat
+                @click="cerrarDialogo"
+              />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+  </q-card>
+</template>
 <script setup>
-import {
-  DxDataGrid,
-  DxColumn,
-  DxPaging,
-  DxFilterRow,
-  DxHeaderFilter,
-  DxEditing,
-  DxSummary,
-  DxGroupItem,
-  DxColumnChooser,
-  DxSearchPanel,
-  DxButton,
-} from "devextreme-vue/data-grid";
+import { DxDataGrid, DxColumn, DxButton } from "devextreme-vue/data-grid";
 import { useEstudioStore } from "../stores/DirectoriosStores";
+import { useTiposEstudiosStore } from "../stores/ConfiMedicasStores";
+import { useStatusExamenEstudiosStore } from "../stores/statusExamenEstudio";
 import { storeToRefs } from "pinia";
-import { onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import { Notify } from "quasar";
 
-// Acceder a la tienda de estudios
+// Acceder a las tiendas
 const estudioStore = useEstudioStore();
+const tiposEstudiosStore = useTiposEstudiosStore();
+const statusExamenEstudiosStore = useStatusExamenEstudiosStore();
+
+// Datos de las tiendas
 const { estudios } = storeToRefs(estudioStore);
+const { estudios: tiposEstudios } = storeToRefs(tiposEstudiosStore);
+const { statusExamenEstudios } = storeToRefs(statusExamenEstudiosStore);
 
-// Detecta si la pantalla es pequeña para mostrar la vista de tarjetas
-const isMobileView = computed(() => window.innerWidth < 600);
+// Estado para el modal
+const mostrarDialogo = ref(false);
+const estudioSeleccionado = ref({});
 
-// Función para editar un estudio
-const onEditButtonClick = async (estudio) => {
-  try {
-    await estudioStore.actualizarEstudio(estudio);
-    Notify.create({
-      message: "Estudio actualizado exitosamente",
-      color: "positive",
-      position: "top-right",
-    });
-  } catch (error) {
-    console.error("Error al actualizar estudio:", error);
-    Notify.create({
-      message: "Error al actualizar estudio",
-      color: "negative",
-      position: "top-right",
-    });
-  }
-};
-
-// Función para eliminar un estudio
-const onDeleteButtonClick = async (id) => {
-  try {
-    await estudioStore.eliminarEstudio(id);
-    Notify.create({
-      message: "Estudio eliminado exitosamente",
-      color: "positive",
-      position: "top-right",
-    });
-  } catch (error) {
-    console.error("Error al eliminar estudio:", error);
-    Notify.create({
-      message: "Error al eliminar estudio",
-      color: "negative",
-      position: "top-right",
-    });
-  }
-};
-
+// Cargar datos al montar el componente
 onMounted(async () => {
-  await estudioStore.cargarEstudios();
+  await Promise.all([
+    estudioStore.cargarEstudios(),
+    tiposEstudiosStore.cargarEstudios(),
+    statusExamenEstudiosStore.cargarStatusExamenEstudios(),
+  ]);
 });
+
+// Abrir el formulario de edición
+const abrirFormularioEdicion = (estudio) => {
+  console.log("Abriendo modal con datos:", estudio);
+
+  estudioSeleccionado.value = { ...estudio };
+
+  // Si `tipoId` y `status` son valores, asegúrate de que sean objetos al abrir el modal
+  const tipo = tiposEstudios.value.find((t) => t.id === estudio.tipoId);
+  const status = statusExamenEstudios.value.find(
+    (s) => s.id === estudio.status
+  );
+
+  estudioSeleccionado.value.tipoId = tipo ? tipo : estudio.tipoId;
+  estudioSeleccionado.value.status = status ? status : estudio.status;
+
+  console.log("Datos para el modal:", estudioSeleccionado.value);
+
+  mostrarDialogo.value = true;
+};
+
+// Guardar los cambios del formulario
+const guardarCambios = async () => {
+  try {
+    console.log("Guardando cambios:", estudioSeleccionado.value);
+
+    estudioSeleccionado.value.tipoId =
+      typeof estudioSeleccionado.value.tipoId === "object"
+        ? estudioSeleccionado.value.tipoId.id
+        : estudioSeleccionado.value.tipoId;
+
+    estudioSeleccionado.value.status =
+      typeof estudioSeleccionado.value.status === "object"
+        ? estudioSeleccionado.value.status.id
+        : estudioSeleccionado.value.status;
+
+    await estudioStore.actualizarEstudio(estudioSeleccionado.value);
+
+    await estudioStore.cargarEstudios();
+
+    Notify.create({
+      type: "positive",
+      message: "Estudio actualizado con éxito",
+      position: "top-right",
+    });
+
+    cerrarDialogo();
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al actualizar el estudio",
+      position: "top-right",
+    });
+    console.error("Error al guardar cambios:", error);
+  }
+};
+
+// Cerrar el modal
+const cerrarDialogo = () => {
+  mostrarDialogo.value = false;
+};
+
+// Eliminar estudio
+const eliminarEstudio = async (e) => {
+  try {
+    await estudioStore.eliminarEstudio(e.row.data.id);
+    Notify.create({
+      type: "negative",
+      message: "Estudio eliminado",
+      position: "top-right",
+    });
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: "Error al eliminar el estudio",
+      position: "top-right",
+    });
+    console.error("Error al eliminar estudio:", error);
+  }
+};
 </script>
-
-<style scoped>
-#app-container {
-  padding: 0 4px;
-  background-color: #f9f9f9;
-  width: 100%;
-}
-
-.custom-data-grid {
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-}
-
-.header-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  text-align: center;
-  margin-bottom: -1px;
-}
-
-/* Estilos de tarjeta para vista móvil */
-.card-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-
-.estudio-card {
-  border: 1px solid #ddd;
-  padding: 16px;
-  border-radius: 8px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.estudio-card h5 {
-  margin: 0 0 8px;
-  font-size: 1.2em;
-  margin-top: 200px;
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-</style>

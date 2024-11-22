@@ -1,12 +1,9 @@
-// src/stores/multiStore.js
 import { defineStore } from "pinia";
 import { ref, onMounted } from "vue";
 import { supabase } from "../supabaseClient";
 
-// ID del tenant fijo
 const tenantId = "a780935f-76e7-46c7-98a3-b4c3ab9bb2c3";
 
-// Helper para cargar y guardar en localStorage
 function loadFromLocalStorage(key, defaultValue) {
   const saved = localStorage.getItem(key);
   return saved ? JSON.parse(saved) : defaultValue;
@@ -45,9 +42,30 @@ export const useClasificacionDiagnosticosStore = defineStore(
       if (error) {
         console.error("Error al agregar clasificación:", error);
       } else if (data && data.length > 0) {
-        // Verificar que data no es null y tiene elementos
         clasificaciones.value.push(data[0]);
         saveToLocalStorage("clasificaciones", clasificaciones.value);
+      }
+    };
+
+    const actualizarClasificacion = async (id, datos) => {
+      const { data, error } = await supabase
+        .from("clasificacionDiagnosticos")
+        .update(datos)
+        .eq("id", id);
+
+      if (error) {
+        console.error("Error al actualizar clasificación:", error);
+      } else if (data) {
+        const index = clasificaciones.value.findIndex(
+          (clasificacion) => clasificacion.id === id
+        );
+        if (index !== -1) {
+          clasificaciones.value[index] = {
+            ...clasificaciones.value[index],
+            ...datos,
+          };
+          saveToLocalStorage("clasificaciones", clasificaciones.value);
+        }
       }
     };
 
@@ -73,6 +91,7 @@ export const useClasificacionDiagnosticosStore = defineStore(
       clasificaciones,
       cargarClasificaciones,
       agregarClasificacion,
+      actualizarClasificacion,
       eliminarClasificacion,
     };
   }
@@ -80,33 +99,30 @@ export const useClasificacionDiagnosticosStore = defineStore(
 
 // Tienda para Diagnósticos
 export const useDiagnosticosStore = defineStore("diagnosticos", () => {
-  const diagnosticos = ref(loadFromLocalStorage("diagnosticos", []));
+  const diagnosticos = ref([]);
 
+  // Cargar diagnósticos desde la base de datos
   const cargarDiagnosticos = async () => {
     const { data, error } = await supabase
       .from("diagnosticos")
       .select("*")
-      .eq("tenant_id", tenantId)
+      .eq("tenant_Id", tenantId) // Reemplaza tenantId por tu lógica
       .order("created_at", { ascending: true });
 
     if (error) {
       console.error("Error al cargar diagnósticos:", error);
     } else if (data) {
       diagnosticos.value = data;
-      saveToLocalStorage("diagnosticos", diagnosticos.value);
     }
   };
-  const agregarDiagnostico = async (
-    descripcion,
-    clasificacionId,
-    clasificacionDescripcion
-  ) => {
+
+  // Agregar un diagnóstico
+  const agregarDiagnostico = async (descripcion, clasificacionId) => {
     const { data, error } = await supabase.from("diagnosticos").insert([
       {
         descripcion,
-        clasificacionId,
-        clasificacionDescripcion,
-        tenant_id: tenantId,
+        clasificacionId: clasificacionId, // Ajuste para el nombre correcto
+        tenant_Id: tenantId, // Reemplaza tenantId por tu lógica
       },
     ]);
 
@@ -114,10 +130,29 @@ export const useDiagnosticosStore = defineStore("diagnosticos", () => {
       console.error("Error al agregar diagnóstico:", error);
     } else if (data && data.length > 0) {
       diagnosticos.value.push(data[0]);
-      saveToLocalStorage("diagnosticos", diagnosticos.value);
     }
   };
 
+  // Actualizar un diagnóstico existente
+  const actualizarDiagnostico = async (id, datos) => {
+    const { data, error } = await supabase
+      .from("diagnosticos")
+      .update(datos)
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar diagnóstico:", error);
+    } else if (data) {
+      const index = diagnosticos.value.findIndex(
+        (diagnostico) => diagnostico.id === id
+      );
+      if (index !== -1) {
+        diagnosticos.value[index] = { ...diagnosticos.value[index], ...datos };
+      }
+    }
+  };
+
+  // Eliminar un diagnóstico por ID
   const eliminarDiagnostico = async (id) => {
     const { error } = await supabase.from("diagnosticos").delete().eq("id", id);
 
@@ -127,17 +162,18 @@ export const useDiagnosticosStore = defineStore("diagnosticos", () => {
       diagnosticos.value = diagnosticos.value.filter(
         (diagnostico) => diagnostico.id !== id
       );
-      saveToLocalStorage("diagnosticos", diagnosticos.value);
     }
   };
 
+  // Cargar diagnósticos al montar la tienda
   onMounted(cargarDiagnosticos);
 
   return {
     diagnosticos,
     cargarDiagnosticos,
     agregarDiagnostico,
-    eliminarDiagnostico, // Agregamos la nueva función aquí
+    actualizarDiagnostico,
+    eliminarDiagnostico,
   };
 });
 
@@ -170,9 +206,25 @@ export const useControlesMedicionStore = defineStore(
       if (error) {
         console.error("Error al agregar control:", error);
       } else if (data && data.length > 0) {
-        // Verificar que data no es null y tiene elementos
         controles.value.push(data[0]);
         saveToLocalStorage("controles", controles.value);
+      }
+    };
+
+    const actualizarControl = async (id, datos) => {
+      const { data, error } = await supabase
+        .from("controles")
+        .update(datos)
+        .eq("id", id);
+
+      if (error) {
+        console.error("Error al actualizar control:", error);
+      } else if (data) {
+        const index = controles.value.findIndex((control) => control.id === id);
+        if (index !== -1) {
+          controles.value[index] = { ...controles.value[index], ...datos };
+          saveToLocalStorage("controles", controles.value);
+        }
       }
     };
 
@@ -188,12 +240,14 @@ export const useControlesMedicionStore = defineStore(
         saveToLocalStorage("controles", controles.value);
       }
     };
+
     onMounted(cargarControles);
 
     return {
       controles,
       cargarControles,
       agregarControl,
+      actualizarControl,
       eliminarControl,
     };
   }

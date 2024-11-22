@@ -1,35 +1,6 @@
 <template>
-  <div class="row">
-    <h4 class="header-title">Clasificación de Diagnósticos</h4>
-  </div>
-
-  <!-- Vista de tarjetas para dispositivos móviles -->
-  <div v-if="isMobileView" class="card-container">
-    <div
-      v-for="clasificacion in clasificaciones"
-      :key="clasificacion.id"
-      class="clasificacion-card"
-    >
-      <h5>{{ clasificacion.nombre }}</h5>
-      <div class="card-actions">
-        <q-btn
-          icon="edit"
-          label="Editar"
-          color="primary"
-          @click="onEditButtonClick(clasificacion)"
-        />
-        <q-btn
-          icon="delete"
-          label="Eliminar"
-          color="negative"
-          @click="onDeleteButtonClick(clasificacion.id)"
-        />
-      </div>
-    </div>
-  </div>
-
-  <!-- DataGrid para pantallas grandes -->
-  <div v-else id="app-container" class="q-mb-xl">
+  <div>
+    <!-- DataGrid para pantallas grandes -->
     <DxDataGrid
       :data-source="clasificaciones"
       :allow-column-reordering="true"
@@ -55,29 +26,43 @@
 
       <!-- Botones de acción -->
       <DxColumn type="buttons">
-        <DxButton name="edit" icon="edit" />
-        <DxButton name="delete" icon="trash" @click="onDeleteButtonClick" />
+        <DxButton icon="edit" hint="Editar" @click="abrirFormularioEdicion" />
+        <DxButton icon="trash" hint="Eliminar" @click="onDeleteButtonClick" />
       </DxColumn>
-
-      <!-- Configuración de edición -->
-      <DxEditing
-        mode="popup"
-        :allow-updating="true"
-        :allow-adding="true"
-        :allow-deleting="true"
-        :popup="{
-          title: 'Editar Clasificación',
-          showTitle: true,
-          width: 500,
-          height: 300,
-        }"
-      />
-
-      <!-- Paginación y filtros -->
-      <DxPaging :enabled="true" :page-size="10" />
-      <DxFilterRow :visible="true" />
-      <DxHeaderFilter :visible="true" />
     </DxDataGrid>
+
+    <!-- Modal de edición -->
+    <q-dialog v-model="mostrarDialogo">
+      <q-card style="min-width: 500px">
+        <q-card-section>
+          <div class="text-h6">Editar Clasificación</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit.prevent="guardarCambios">
+            <q-input
+              v-model="clasificacionSeleccionada.nombre"
+              label="Nombre de Clasificación"
+              outlined
+              :error="!!errores.nombre"
+              :error-message="errores.nombre"
+              class="q-mb-md"
+            />
+
+            <div class="q-mt-md">
+              <q-btn label="Guardar" color="primary" type="submit" />
+              <q-btn
+                label="Cancelar"
+                color="negative"
+                flat
+                @click="cerrarDialogo"
+                class="q-ml-sm"
+              />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -85,57 +70,109 @@
 import {
   DxDataGrid,
   DxColumn,
-  DxPaging,
-  DxFilterRow,
-  DxHeaderFilter,
-  DxEditing,
   DxButton,
   DxColumnChooser,
   DxScrolling,
   DxSorting,
+  DxHeaderFilter,
   DxLoadPanel,
 } from "devextreme-vue/data-grid";
-import { useClasificacionDiagnosticosStore } from "../stores/DiagnosticosStores";
+import { ref, onMounted } from "vue";
 import { Notify } from "quasar";
-import { storeToRefs } from "pinia";
-import { onMounted, computed } from "vue";
+import { useClasificacionDiagnosticosStore } from "../stores/DiagnosticosStores";
 
-// Acceder a la tienda de clasificaciones de diagnósticos
+// Acceder a la tienda
 const clasificacionStore = useClasificacionDiagnosticosStore();
-const { clasificaciones } = storeToRefs(clasificacionStore);
+const clasificaciones = ref([]);
 
-// Computed para detectar si la vista es móvil
-const isMobileView = computed(() => window.innerWidth < 600);
+// Estados del modal
+const mostrarDialogo = ref(false);
+const clasificacionSeleccionada = ref({});
+const errores = ref({});
 
-// Método para eliminar una clasificación
-const onDeleteButtonClick = async (id) => {
-  try {
-    await clasificacionStore.eliminarClasificacion(id);
+// Función para cargar clasificaciones
+const cargarClasificaciones = async () => {
+  await clasificacionStore.cargarClasificaciones();
+  clasificaciones.value = clasificacionStore.clasificaciones;
+};
+
+// Abrir el formulario de edición
+const abrirFormularioEdicion = ({ row: { data } }) => {
+  if (!data || !data.id) {
     Notify.create({
-      message: "Clasificación eliminada exitosamente",
-      color: "positive",
+      type: "negative",
+      message: "Error al abrir el modal: la clasificación no tiene ID.",
       position: "top-right",
     });
+    return;
+  }
+  clasificacionSeleccionada.value = { ...data };
+  mostrarDialogo.value = true;
+};
+
+// Guardar los cambios del formulario
+const guardarCambios = async () => {
+  const id = clasificacionSeleccionada.value.id;
+  const datos = { nombre: clasificacionSeleccionada.value.nombre };
+
+  if (!id || !clasificacionSeleccionada.value.nombre) {
+    errores.value.nombre = "El nombre de la clasificación es obligatorio.";
+    return;
+  }
+
+  try {
+    await clasificacionStore.actualizarClasificacion(id, datos);
+    Notify.create({
+      type: "positive",
+      message: "Clasificación actualizada con éxito",
+      position: "top-right",
+    });
+
+    await cargarClasificaciones();
+    cerrarDialogo();
   } catch (error) {
     Notify.create({
+      type: "negative",
+      message: "Error al actualizar la clasificación",
+      position: "top-right",
+    });
+    console.error("Error al guardar cambios:", error);
+  }
+};
+
+// Cerrar el modal
+const cerrarDialogo = () => {
+  mostrarDialogo.value = false;
+  errores.value.nombre = "";
+};
+
+// Eliminar clasificación
+const onDeleteButtonClick = async ({ row: { data } }) => {
+  try {
+    await clasificacionStore.eliminarClasificacion(data.id);
+    Notify.create({
+      type: "positive",
+      message: "Clasificación eliminada con éxito",
+      position: "top-right",
+    });
+    await cargarClasificaciones();
+  } catch (error) {
+    Notify.create({
+      type: "negative",
       message: "Error al eliminar la clasificación",
-      color: "negative",
       position: "top-right",
     });
     console.error("Error al eliminar clasificación:", error);
   }
 };
 
-onMounted(async () => {
-  await clasificacionStore.cargarClasificaciones();
-});
+// Cargar clasificaciones al montar el componente
+onMounted(cargarClasificaciones);
 </script>
 
 <style scoped>
-#app-container {
-  padding: 0 4px;
-  background-color: #f9f9f9;
-  width: 100%;
+.text-primary {
+  color: #000000;
 }
 
 .custom-data-grid {
@@ -145,37 +182,24 @@ onMounted(async () => {
   width: 100%;
 }
 
-.header-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  text-align: center;
-}
-
-/* Estilos de tarjeta para vista móvil */
-.card-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-
-.clasificacion-card {
-  border: 1px solid #ddd;
-  padding: 16px;
+.q-card {
   border-radius: 8px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.clasificacion-card h5 {
-  margin: 0 0 8px;
-  font-size: 1.2em;
+.q-card-section {
+  padding: 16px;
 }
 
-.card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
+.text-h6 {
+  margin: 0;
+  /* font-weight: bold; */
+}
+
+.q-mb-md {
+  margin-bottom: 16px;
+}
+
+.q-mt-md {
+  margin-top: 16px;
 }
 </style>

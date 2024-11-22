@@ -76,7 +76,9 @@
           <q-select
             class="q-mb-sm q-mr-sm"
             v-model="medicamentoData.status"
-            :options="statusOptions"
+            :options="statuses"
+            option-value="id"
+            option-label="descripcion"
             label="Status"
             outlined
             dense
@@ -107,14 +109,15 @@ import { useTiposMedicamentosStore } from "../stores/ConfiMedicasStores";
 import { storeToRefs } from "pinia";
 import { Notify } from "quasar";
 import ListadoMedicamentos from "./ListadoMedicamentos.vue";
+import { useStatusStore } from "src/stores/status";
 
 // Inicializar tiendas
 const medicamentoStore = useMedicamentoStore();
 const tiposMedicamentosStore = useTiposMedicamentosStore();
-
+const statusStore = useStatusStore();
 // Acceso a propiedades reactivas de las tiendas
 const { medicamentos } = storeToRefs(tiposMedicamentosStore);
-
+const { statuses } = storeToRefs(statusStore);
 // Datos reactivos para el formulario
 const medicamentoData = reactive({
   codigo: "",
@@ -139,38 +142,37 @@ const medicamentoErrors = reactive({
   status: "",
 });
 
-// Opciones de estado
-const statusOptions = [
-  { label: "Disponible", value: "disponible" },
-  { label: "No disponible", value: "no_disponible" },
-  { label: "Pendiente", value: "pendiente" },
-];
-
 // Cargar datos al montar el componente
 onMounted(async () => {
   await tiposMedicamentosStore.cargarMedicamentos();
+  await statusStore.cargarStatuses();
+  console.log(statuses.value);
 });
 
 // Función para guardar medicamento
 const guardarMedicamento = async () => {
+  // Limpia los errores previos
   Object.keys(medicamentoErrors).forEach((key) => {
     medicamentoErrors[key] = "";
   });
 
+  // Validaciones del formulario
   if (!medicamentoData.codigo)
     medicamentoErrors.codigo = "Ingrese un código para el medicamento.";
   if (!medicamentoData.descripcion)
     medicamentoErrors.descripcion = "Ingrese una descripción.";
   if (!medicamentoData.tipoId)
-    medicamentoErrors.tipoId = "El tipo de estudio es obligatorio.";
+    medicamentoErrors.tipoId = "El tipo es obligatorio.";
   if (!medicamentoData.indicaciones)
     medicamentoErrors.indicaciones = "Ingrese las indicaciones de uso.";
   if (!medicamentoData.precioCosto)
     medicamentoErrors.precioCosto = "Ingrese el precio de Costo.";
-
   if (!medicamentoData.precioVenta)
     medicamentoErrors.precioVenta = "Ingrese el precio de Venta.";
+  if (!medicamentoData.status || !medicamentoData.status.id)
+    medicamentoErrors.status = "Seleccione un status válido.";
 
+  // Si hay errores, no continuar
   if (Object.values(medicamentoErrors).some((error) => error)) {
     Notify.create({
       type: "negative",
@@ -179,42 +181,40 @@ const guardarMedicamento = async () => {
     });
     return;
   }
-
-  // const tipoId =
-  //   typeof medicamentoData.tipoId === "object"
-  //     ? medicamentoData.tipoId.id
-  //     : medicamentoData.tipoId;
-
-  // const tipoDescripcion =
-  //   medicamentos.value.find((medicamento) => medicamento.id === tipoId)
-  //     ?.descripcion || "";
-
   const medicamentoInfo = {
     codigo: medicamentoData.codigo,
     descripcion: medicamentoData.descripcion,
-    tipoId: medicamentoData.tipoId.id,
+    tipoId: medicamentoData.tipoId.id, // Asegúrate de que tipoId es un objeto con id
     indicaciones: medicamentoData.indicaciones,
     precioCosto: medicamentoData.precioCosto,
     precioVenta: medicamentoData.precioVenta,
     facturar: medicamentoData.facturar,
-    status:
-      typeof medicamentoData.status === "object"
-        ? medicamentoData.status.value
-        : medicamentoData.status,
+    status: medicamentoData.status.id, // Guardamos solo el ID del status
   };
 
   try {
-    console.log(medicamentoInfo);
+    // Guarda el medicamento usando la tienda
+    console.log("Medicamento a guardar:", medicamentoInfo);
     await medicamentoStore.agregarMedicamento(medicamentoInfo);
+
+    // Notificación de éxito
     Notify.create({
       type: "positive",
       message: "Medicamento guardado correctamente",
       position: "top-right",
     });
+
+    // Limpia los datos del formulario
     Object.keys(medicamentoData).forEach((key) => {
-      medicamentoData[key] = "";
+      if (typeof medicamentoData[key] === "boolean") {
+        medicamentoData[key] = false;
+      } else {
+        medicamentoData[key] = "";
+      }
     });
   } catch (error) {
+    // Manejo de errores al guardar
+    console.error("Error al guardar medicamento:", error);
     Notify.create({
       type: "negative",
       message: "Error al guardar el medicamento",
