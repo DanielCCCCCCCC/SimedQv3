@@ -49,7 +49,7 @@
               class="q-mb-md"
             />
 
-            <div class="q-mt-md">
+            <div class="q-mt-md" align="right">
               <q-btn label="Guardar" color="primary" type="submit" />
               <q-btn
                 label="Cancelar"

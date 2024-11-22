@@ -46,11 +46,29 @@ export const useDepartamentoStore = defineStore("departamentos", () => {
     }
   };
 
+  // Nueva función para actualizar un departamento
+  const actualizarDepartamento = async (id, descripcion) => {
+    const { data, error } = await supabase
+      .from("departamentos")
+      .update({ descripcion })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar departamento:", error);
+    } else if (data && data[0]) {
+      const index = departamentos.value.findIndex((depto) => depto.id === id);
+      if (index !== -1) {
+        departamentos.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     departamentos,
     cargarDepartamentos,
     agregarDepartamento,
     eliminarDepartamento,
+    actualizarDepartamento, // Asegúrate de exportar la función
   };
 });
 
@@ -63,7 +81,6 @@ export const useMunicipioStore = defineStore("municipios", () => {
     const { data, error } = await supabase
       .from("municipios")
       .select("*")
-
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -73,22 +90,18 @@ export const useMunicipioStore = defineStore("municipios", () => {
     }
   };
 
-  const agregarMunicipio = async (
-    descripcion,
-    departamentoId,
-    departamentoDescripcion
-  ) => {
+  const agregarMunicipio = async (descripcion, departamentoId) => {
     const { data, error } = await supabase.from("municipios").insert([
       {
         descripcion,
         departamentoId,
-        departamentoDescripcion,
         tenant_id: tenantId,
       },
     ]);
 
     if (error) {
       console.error("Error al agregar municipio:", error);
+      throw error; // Opcional: para manejar el error en el componente
     } else if (data && data[0]) {
       municipios.value.push(data[0]);
     }
@@ -103,11 +116,29 @@ export const useMunicipioStore = defineStore("municipios", () => {
     }
   };
 
+  // Nueva función para actualizar un municipio
+  const actualizarMunicipio = async (id, descripcion, departamentoId) => {
+    const { data, error } = await supabase
+      .from("municipios")
+      .update({ descripcion, departamentoId })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar municipio:", error);
+    } else if (data && data[0]) {
+      const index = municipios.value.findIndex((muni) => muni.id === id);
+      if (index !== -1) {
+        municipios.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     municipios,
     cargarMunicipios,
     agregarMunicipio,
     eliminarMunicipio,
+    actualizarMunicipio, // Exportar la función
   };
 });
 
@@ -120,7 +151,6 @@ export const useGrupoSanguineoStore = defineStore("grupoSanguineo", () => {
     const { data, error } = await supabase
       .from("grupoSanguineo")
       .select("*")
-
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -133,7 +163,6 @@ export const useGrupoSanguineoStore = defineStore("grupoSanguineo", () => {
   const agregarGrupoSanguineo = async (descripcion) => {
     const { data, error } = await supabase
       .from("grupoSanguineo")
-
       .insert([{ descripcion, tenant_id: tenantId }]);
 
     if (error) {
@@ -157,11 +186,31 @@ export const useGrupoSanguineoStore = defineStore("grupoSanguineo", () => {
     }
   };
 
+  // Nueva función para actualizar un grupo sanguíneo
+  const actualizarGrupoSanguineo = async (id, descripcion) => {
+    const { data, error } = await supabase
+      .from("grupoSanguineo")
+      .update({ descripcion })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar grupo sanguíneo:", error);
+    } else if (data && data[0]) {
+      const index = gruposSanguineos.value.findIndex(
+        (grupo) => grupo.id === id
+      );
+      if (index !== -1) {
+        gruposSanguineos.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     gruposSanguineos,
     cargarGruposSanguineos,
     agregarGrupoSanguineo,
     eliminarGrupoSanguineo,
+    actualizarGrupoSanguineo, // Exportar la función
   };
 });
 
@@ -174,7 +223,6 @@ export const useEscolaridadStore = defineStore("escolaridad", () => {
     const { data, error } = await supabase
       .from("escolaridad")
       .select("*")
-
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -205,11 +253,29 @@ export const useEscolaridadStore = defineStore("escolaridad", () => {
     }
   };
 
+  // Nueva función para actualizar una escolaridad
+  const actualizarEscolaridad = async (id, descripcion) => {
+    const { data, error } = await supabase
+      .from("escolaridad")
+      .update({ descripcion })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar escolaridad:", error);
+    } else if (data && data[0]) {
+      const index = escolaridades.value.findIndex((esc) => esc.id === id);
+      if (index !== -1) {
+        escolaridades.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     escolaridades,
     cargarEscolaridades,
     agregarEscolaridad,
     eliminarEscolaridad,
+    actualizarEscolaridad, // Exportar la función
   };
 });
 
@@ -222,7 +288,6 @@ export const useEstadoCivilStore = defineStore("estadoCivil", () => {
     const { data, error } = await supabase
       .from("estadoCivil")
       .select("*")
-
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -255,10 +320,30 @@ export const useEstadoCivilStore = defineStore("estadoCivil", () => {
     }
   };
 
+  // Nueva función para actualizar un estado civil
+  const actualizarEstadoCivil = async (id, descripcion) => {
+    const { data, error } = await supabase
+      .from("estadoCivil")
+      .update({ descripcion })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error al actualizar estado civil:", error);
+    } else if (data && data[0]) {
+      const index = estadosCiviles.value.findIndex(
+        (estado) => estado.id === id
+      );
+      if (index !== -1) {
+        estadosCiviles.value[index] = data[0];
+      }
+    }
+  };
+
   return {
     estadosCiviles,
     cargarEstadosCiviles,
     agregarEstadoCivil,
     eliminarEstadoCivil,
+    actualizarEstadoCivil, // Exportar la función
   };
 });

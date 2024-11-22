@@ -20,13 +20,6 @@
             icon="add"
             @click="guardarPaciente"
           />
-          <q-btn
-            label="Eliminar"
-            color="negative"
-            icon="delete"
-            @click="eliminarPaciente"
-            class="q-ml-sm"
-          />
         </div>
       </q-form>
     </q-card>

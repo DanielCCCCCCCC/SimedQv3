@@ -7,20 +7,63 @@
       :allow-column-resizing="true"
       :column-auto-width="true"
       :allow-column-reordering="true"
+      :editing="{
+        mode: 'popup',
+        allowUpdating: true,
+        allowAdding: true,
+        allowDeleting: true,
+        popup: {
+          title: 'Editar Municipio',
+          showTitle: true,
+          width: 700,
+          height: 345,
+        },
+        form: {
+          items: [
+            {
+              dataField: 'descripcion',
+              label: { text: 'Municipio' },
+              validationRules: [
+                { type: 'required', message: 'La descripción es obligatoria' },
+              ],
+            },
+            {
+              dataField: 'departamentoId',
+              editorType: 'dxSelectBox',
+              label: { text: 'Departamento' },
+              editorOptions: {
+                dataSource: departamentos,
+                displayExpr: 'descripcion',
+                valueExpr: 'id',
+                searchEnabled: true,
+              },
+              validationRules: [
+                { type: 'required', message: 'Seleccione un departamento' },
+              ],
+            },
+          ],
+        },
+      }"
+      @rowInserting="onRowInserting"
+      @rowUpdating="onRowUpdating"
+      @rowRemoving="onRowRemoving"
     >
-      <!-- Agrupación por departamento -->
+      <!-- Agrupación por departamentoId con DxLookup -->
       <DxColumn
-        data-field="departamentoDescripcion"
+        data-field="departamentoId"
         :group-index="0"
         sort-order="asc"
+        caption="Departamento"
       >
-        <DxRequiredRule />
+        <DxLookup
+          :data-source="departamentos"
+          value-expr="id"
+          display-expr="descripcion"
+        />
       </DxColumn>
 
       <!-- Columna para el nombre del municipio -->
-      <DxColumn data-field="descripcion" caption="Municipio">
-        <DxRequiredRule />
-      </DxColumn>
+      <DxColumn data-field="descripcion" caption="Municipio"> </DxColumn>
 
       <!-- Columna de botones de acción -->
       <DxColumn type="buttons">
@@ -54,12 +97,10 @@
     </DxDataGrid>
   </div>
 </template>
-
 <script>
 import {
   DxDataGrid,
   DxColumn,
-  DxRequiredRule,
   DxColumnChooser,
   DxColumnFixing,
   DxFilterRow,
@@ -70,18 +111,22 @@ import {
   DxGrouping,
   DxToolbar,
   DxItem,
+  DxLookup,
 } from "devextreme-vue/data-grid";
 import { DxButton } from "devextreme-vue/button";
-import { useMunicipioStore } from "../stores/DatosGeneralesStores";
+import {
+  useMunicipioStore,
+  useDepartamentoStore,
+} from "../stores/DatosGeneralesStores";
 import { storeToRefs } from "pinia";
 import { onMounted, ref } from "vue";
+import { Notify } from "quasar";
 
 export default {
-  name: "App",
+  name: "ListadoMunicipios",
   components: {
     DxDataGrid,
     DxColumn,
-    DxRequiredRule,
     DxColumnChooser,
     DxColumnFixing,
     DxFilterRow,
@@ -92,15 +137,20 @@ export default {
     DxGrouping,
     DxToolbar,
     DxItem,
+    DxLookup,
     DxButton,
   },
   setup() {
     const municipioStore = useMunicipioStore();
+    const departamentoStore = useDepartamentoStore();
+
     const { municipios } = storeToRefs(municipioStore);
+    const { departamentos } = storeToRefs(departamentoStore);
     const expanded = ref(false);
 
-    // Cargar municipios cuando el componente se monta
+    // Cargar municipios y departamentos cuando el componente se monta
     onMounted(async () => {
+      await departamentoStore.cargarDepartamentos();
       await municipioStore.cargarMunicipios();
     });
 
@@ -109,34 +159,83 @@ export default {
       expanded.value = !expanded.value;
     };
 
+    // Manejar la inserción de un nuevo municipio
+    const onRowInserting = async (e) => {
+      try {
+        const { descripcion, departamentoId } = e.data;
+        await municipioStore.agregarMunicipio(descripcion, departamentoId);
+        Notify.create({
+          type: "positive",
+          message: "Municipio agregado exitosamente",
+          position: "top-right",
+        });
+      } catch (error) {
+        console.error("Error al agregar municipio:", error);
+        Notify.create({
+          type: "negative",
+          message: "Error al agregar municipio",
+          position: "top-right",
+        });
+        e.cancel = true;
+      }
+    };
+
+    // Manejar la actualización de un municipio
+    const onRowUpdating = async (e) => {
+      try {
+        const id = e.oldData.id;
+        const { descripcion, departamentoId } = { ...e.oldData, ...e.newData };
+        await municipioStore.actualizarMunicipio(
+          id,
+          descripcion,
+          departamentoId
+        );
+        Notify.create({
+          type: "positive",
+          message: "Municipio actualizado exitosamente",
+          position: "top-right",
+        });
+      } catch (error) {
+        console.error("Error al actualizar municipio:", error);
+        Notify.create({
+          type: "negative",
+          message: "Error al actualizar municipio",
+          position: "top-right",
+        });
+        e.cancel = true;
+      }
+    };
+
+    // Manejar la eliminación de un municipio
+    const onRowRemoving = async (e) => {
+      try {
+        const id = e.data.id;
+        await municipioStore.eliminarMunicipio(id);
+        Notify.create({
+          type: "positive",
+          message: "Municipio eliminado exitosamente",
+          position: "top-right",
+        });
+      } catch (error) {
+        console.error("Error al eliminar municipio:", error);
+        Notify.create({
+          type: "negative",
+          message: "Error al eliminar municipio",
+          position: "top-right",
+        });
+        e.cancel = true;
+      }
+    };
+
     return {
       municipios,
+      departamentos,
       expanded,
       toggleExpand,
+      onRowInserting,
+      onRowUpdating,
+      onRowRemoving,
     };
   },
 };
 </script>
-
-<style scoped>
-#app-container {
-  padding: 0 4px;
-  background-color: #f9f9f9;
-  width: 100%;
-}
-
-.custom-data-grid {
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-}
-
-.header-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  margin: 1px 0 1px;
-  text-align: center;
-}
-</style>

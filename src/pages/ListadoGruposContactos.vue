@@ -56,15 +56,19 @@
               v-model="grupoSeleccionado.descripcion"
               label="Descripción"
               outlined
-              dense
               :rules="[validador]"
             />
           </q-form>
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Cancelar" color="primary" @click="cerrarDialogo" />
           <q-btn label="Guardar" color="primary" @click="guardarCambios" />
+          <q-btn
+            flat
+            label="Cancelar"
+            color="negative"
+            @click="cerrarDialogo"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>

@@ -1,59 +1,81 @@
 <template>
-  <div class="row">
-    <h4 class="header-title">Escolaridades</h4>
-  </div>
-  <div id="app-container" class="q-mb-xl">
-    <DxDataGrid
-      :data-source="escolaridades"
-      :allow-column-reordering="true"
-      :show-borders="true"
-      class="custom-data-grid"
-      :row-alternation-enabled="true"
-      key-expr="id"
-    >
-      <DxScrolling mode="virtual" />
-      <DxColumnChooser :enabled="true" />
-      <DxSorting mode="multiple" />
-      <DxHeaderFilter :visible="true" />
-      <DxLoadPanel :show-pane="true" />
+  <div>
+    <!-- Título -->
+    <div class="row">
+      <h4 class="header-title">Escolaridades</h4>
+    </div>
+    <!-- DataGrid -->
+    <div id="app-container" class="q-mb-xl">
+      <DxDataGrid
+        :data-source="escolaridades"
+        :allow-column-reordering="true"
+        :show-borders="true"
+        class="custom-data-grid"
+        :row-alternation-enabled="true"
+        key-expr="id"
+      >
+        <!-- Configuraciones del DataGrid -->
+        <DxScrolling mode="virtual" />
+        <DxColumnChooser :enabled="true" />
+        <DxSorting mode="multiple" />
+        <DxHeaderFilter :visible="true" />
+        <DxLoadPanel :show-pane="true" />
 
-      <!-- Columna para descripción -->
-      <DxColumn
-        data-field="descripcion"
-        caption="Descripción"
-        :allow-sorting="true"
-        min-width="150"
-        width="200"
-      ></DxColumn>
+        <!-- Columna para descripción -->
+        <DxColumn
+          data-field="descripcion"
+          caption="Descripción"
+          :allow-sorting="true"
+          min-width="150"
+          width="200"
+        ></DxColumn>
 
-      <!-- Botones de acción -->
-      <DxColumn type="buttons">
-        <DxButton name="edit" icon="edit" />
-        <DxButton name="delete" icon="trash" @click="onDeleteButtonClick" />
-      </DxColumn>
+        <!-- Botones de acción -->
+        <DxColumn type="buttons">
+          <DxButton icon="edit" hint="Editar" @click="abrirFormularioEdicion" />
+          <DxButton icon="trash" hint="Eliminar" @click="eliminarEscolaridad" />
+        </DxColumn>
 
-      <!-- Configuración de edición -->
-      <DxEditing
-        mode="popup"
-        :allow-updating="true"
-        :allow-adding="true"
-        :allow-deleting="true"
-        :popup="{
-          title: 'Editar Escolaridad',
-          showTitle: true,
-          width: 500,
-          height: 300,
-        }"
-      />
+        <!-- Paginación y filtros -->
+        <DxPaging :enabled="true" :page-size="10" />
+        <DxFilterRow :visible="true" />
+        <DxHeaderFilter :visible="true" />
+      </DxDataGrid>
+    </div>
 
-      <!-- Paginación y filtros -->
-      <DxPaging :enabled="true" :page-size="10" />
-      <DxFilterRow :visible="true" />
-      <DxHeaderFilter :visible="true" />
-    </DxDataGrid>
+    <!-- Formulario de edición (modal) -->
+    <q-dialog v-model="mostrarDialogo">
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <div class="text-h6">Editar Escolaridad</div>
+          <q-space />
+          <q-btn icon="close" flat round @click="cerrarDialogo" />
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit.prevent="guardarCambios">
+            <q-input
+              v-model="escolaridadSeleccionada.descripcion"
+              label="Descripción"
+              outlined
+              :rules="[validador]"
+            />
+          </q-form>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn label="Guardar" color="primary" @click="guardarCambios" />
+          <q-btn
+            flat
+            label="Cancelar"
+            color="negative"
+            @click="cerrarDialogo"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
-
 <script>
 import {
   DxDataGrid,
@@ -61,7 +83,6 @@ import {
   DxPaging,
   DxFilterRow,
   DxHeaderFilter,
-  DxEditing,
   DxButton,
   DxColumnChooser,
   DxScrolling,
@@ -70,8 +91,8 @@ import {
 } from "devextreme-vue/data-grid";
 import { useEscolaridadStore } from "../stores/DatosGeneralesStores";
 import { storeToRefs } from "pinia";
-import { onMounted } from "vue";
-import { Notify } from "quasar"; // Importar para notificaciones
+import { onMounted, ref } from "vue";
+import { Notify } from "quasar";
 
 export default {
   components: {
@@ -80,7 +101,6 @@ export default {
     DxPaging,
     DxFilterRow,
     DxHeaderFilter,
-    DxEditing,
     DxButton,
     DxColumnChooser,
     DxScrolling,
@@ -88,11 +108,66 @@ export default {
     DxLoadPanel,
   },
   setup() {
+    // Instancia de la tienda y referencias reactivas
     const escolaridadStore = useEscolaridadStore();
     const { escolaridades } = storeToRefs(escolaridadStore);
 
-    // Método para eliminar una escolaridad
-    const onDeleteButtonClick = async (e) => {
+    // Estado para el modal y la escolaridad seleccionada
+    const mostrarDialogo = ref(false);
+    const escolaridadSeleccionada = ref({});
+
+    // Cargar las escolaridades al montar el componente
+    onMounted(async () => {
+      await escolaridadStore.cargarEscolaridades();
+    });
+
+    // Función para abrir el formulario de edición
+    const abrirFormularioEdicion = (e) => {
+      const escolaridad = e.row.data;
+      escolaridadSeleccionada.value = { ...escolaridad };
+      mostrarDialogo.value = true;
+    };
+
+    // Función para guardar los cambios
+    const guardarCambios = async () => {
+      try {
+        // Validar que la descripción no esté vacía
+        if (!escolaridadSeleccionada.value.descripcion.trim()) {
+          Notify.create({
+            type: "negative",
+            message: "La descripción es obligatoria",
+            position: "top-right",
+          });
+          return;
+        }
+
+        // Actualizar la escolaridad en la tienda
+        await escolaridadStore.actualizarEscolaridad(
+          escolaridadSeleccionada.value.id,
+          escolaridadSeleccionada.value.descripcion
+        );
+
+        // Mostrar notificación de éxito
+        Notify.create({
+          type: "positive",
+          message: "Escolaridad actualizada con éxito",
+          position: "top-right",
+        });
+
+        // Cerrar el diálogo
+        cerrarDialogo();
+      } catch (error) {
+        Notify.create({
+          type: "negative",
+          message: "Error al actualizar la escolaridad",
+          position: "top-right",
+        });
+        console.error("Error al guardar cambios:", error);
+      }
+    };
+
+    // Función para eliminar una escolaridad
+    const eliminarEscolaridad = async (e) => {
       const id = e.row.data.id;
       try {
         await escolaridadStore.eliminarEscolaridad(id);
@@ -111,18 +186,28 @@ export default {
       }
     };
 
-    onMounted(async () => {
-      await escolaridadStore.cargarEscolaridades();
-    });
+    // Función para cerrar el diálogo
+    const cerrarDialogo = () => {
+      mostrarDialogo.value = false;
+      escolaridadSeleccionada.value = {};
+    };
+
+    // Validador para el campo de descripción
+    const validador = (val) => !!val || "La descripción es obligatoria";
 
     return {
       escolaridades,
-      onDeleteButtonClick,
+      mostrarDialogo,
+      escolaridadSeleccionada,
+      abrirFormularioEdicion,
+      guardarCambios,
+      eliminarEscolaridad,
+      cerrarDialogo,
+      validador,
     };
   },
 };
 </script>
-
 <style scoped>
 #app-container {
   padding: 0 4px;

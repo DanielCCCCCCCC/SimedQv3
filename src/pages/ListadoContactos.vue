@@ -60,17 +60,20 @@
         :visible="true"
       />
       <DxColumn
-        data-field="municipioDescripcion"
-        caption="Municipio"
-        :allow-sorting="true"
-        :visible="true"
-      />
-      <DxColumn
         data-field="departamentoDescripcion"
         caption="Departamento"
         :allow-sorting="true"
         :visible="true"
+        width="140px"
       />
+      <DxColumn
+        data-field="municipioDescripcion"
+        caption="Municipio"
+        :allow-sorting="true"
+        :visible="true"
+        width="140px"
+      />
+
       <DxColumn
         data-field="emailContacto"
         caption="E-mail"
@@ -80,12 +83,14 @@
         data-field="telefonoCasaContacto"
         caption="Teléfono Casa"
         :allow-sorting="true"
+        :visible="false"
       />
       <DxColumn
         data-field="telefonoPersonalContacto"
-        caption="Teléfono Personal"
+        caption="Tel. Personal"
         :allow-sorting="true"
         :visible="true"
+        width="100px"
       />
       <DxColumn
         data-field="observacionContacto"

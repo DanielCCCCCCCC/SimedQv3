@@ -40,7 +40,12 @@
       :column-min-width="50"
       :width="responsiveWidth"
     >
-      <DxColumn data-field="id" caption="ID Médico" :allow-sorting="true" />
+      <DxColumn
+        data-field="id"
+        caption="ID Médico"
+        :allow-sorting="true"
+        width="100px"
+      />
       <DxColumn
         data-field="nombre"
         caption="Nombre Completo"
@@ -61,12 +66,15 @@
         data-field="telefonoPersonal"
         caption="Teléfono"
         :allow-sorting="true"
-        :visible="false"
+        :visible="true"
+        width="100px"
       />
       <DxColumn
         data-field="telefonoCasa"
         caption="Celular"
         :allow-sorting="true"
+        :visible="true"
+        width="100px"
       />
       <DxColumn
         data-field="email"

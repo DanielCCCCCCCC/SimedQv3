@@ -50,13 +50,12 @@
               option-label="nombre"
               label="Clasificación"
               outlined
-              dense
               required
               emit-value
               map-options
             />
 
-            <div class="q-mt-md">
+            <div class="row justify-end q-mt-md">
               <q-btn label="Guardar" color="primary" type="submit" />
               <q-btn
                 label="Cancelar"

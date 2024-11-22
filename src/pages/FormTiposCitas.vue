@@ -20,13 +20,6 @@
             icon="add"
             @click="guardarCita"
           />
-          <q-btn
-            label="Eliminar"
-            color="negative"
-            icon="delete"
-            @click="eliminarCita"
-            class="q-ml-sm"
-          />
         </div>
       </q-form>
     </q-card>
