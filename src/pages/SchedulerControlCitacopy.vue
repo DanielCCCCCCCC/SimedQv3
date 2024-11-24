@@ -44,14 +44,13 @@
             <DxSearchPanel
               :width="300"
               :visible="true"
-              placeholder="Buscar Paciente"
+              placeholder="Buscar Nombre, Apellido o Cédula"
             />
 
             <DxSelection mode="single" />
             <DxColumn data-field="nombres" caption="Nombres" />
             <DxColumn data-field="apellidos" caption="Apellidos" />
             <DxColumn data-field="dni" caption="DNI" />
-            <DxColumn data-field="tipoDescripcion" caption="Tipo" />
           </DxDataGrid>
         </q-card-section>
         <q-card-actions align="right">
@@ -60,7 +59,6 @@
       </q-card>
     </q-dialog>
 
-    <!-- Modal para buscar médicos -->
     <!-- Modal para buscar médicos -->
     <q-dialog v-model="isDoctorModalOpen" persistent>
       <q-card style="width: 80%; max-width: 800px">
@@ -84,7 +82,7 @@
               <DxSearchPanel
                 :width="300"
                 :visible="true"
-                placeholder="Buscar Médico"
+                placeholder="Buscar Médico o Especialidad"
               />
               <DxSelection mode="single" />
               <DxColumn data-field="nombre" caption="Nombre" />

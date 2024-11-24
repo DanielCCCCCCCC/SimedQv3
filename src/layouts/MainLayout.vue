@@ -193,21 +193,24 @@
     <q-page-container>
       <!-- Pestañas dinámicas -->
       <q-tabs v-model="selectedTab" class="tabs-container" dense>
-        <div v-for="tab in tabs" :key="tab.name" class="tab-container">
-          <q-tab
-            :name="tab.name"
-            :label="tab.label"
-            @click="navigateTo(tab.path)"
-          />
-          <q-btn
-            flat
-            dense
-            round
-            class="close-btn"
-            icon="close"
-            @click.stop="closeTab(tab.name)"
-          />
-        </div>
+        <q-tab
+          v-for="tab in tabs"
+          :key="tab.name"
+          :name="tab.name"
+          @click="navigateTo(tab.path)"
+        >
+          <template v-slot:default>
+            <span>{{ tab.label }}</span>
+            <q-btn
+              flat
+              dense
+              round
+              class="close-btn"
+              icon="close"
+              @click.stop="closeTab(tab.name)"
+            />
+          </template>
+        </q-tab>
       </q-tabs>
 
       <!-- Contenido de las pestañas -->
@@ -239,7 +242,6 @@ onMounted(() => {
 
   if (savedTabs) {
     tabs.value = JSON.parse(savedTabs);
-    selectedTab.value = tabs.value[0]?.name || "default";
   }
 
   if (savedRoute) {
@@ -247,6 +249,15 @@ onMounted(() => {
     router.push(savedRoute);
   } else {
     selectedRoute.value = route.path;
+  }
+
+  // Encontrar la pestaña que coincide con la ruta seleccionada
+  const matchedTab = tabs.value.find((tab) => tab.path === selectedRoute.value);
+  if (matchedTab) {
+    selectedTab.value = matchedTab.name;
+  } else {
+    // Si no hay coincidencia, seleccionar la primera pestaña o 'default'
+    selectedTab.value = tabs.value[0]?.name || "default";
   }
 });
 
@@ -257,6 +268,16 @@ watch(tabs, (newTabs) => {
 watch(route, (newRoute) => {
   selectedRoute.value = newRoute.path;
   localStorage.setItem("selectedRoute", newRoute.path);
+
+  // Encontrar la pestaña que coincide con la nueva ruta
+  const matchedTab = tabs.value.find((tab) => tab.path === newRoute.path);
+  if (matchedTab) {
+    selectedTab.value = matchedTab.name;
+  } else {
+    // Opcional: manejar rutas que no tienen una pestaña correspondiente
+    // Por ejemplo, podrías seleccionar 'default' o alguna otra lógica
+    selectedTab.value = "default";
+  }
 });
 
 // Alternar el menú lateral
@@ -349,6 +370,6 @@ const closeTab = (name) => {
   top: 4px;
   color: #000;
   font-size: 7px;
-  margin-right: -8px;
+  margin-right: -24px;
 }
 </style>
