@@ -191,8 +191,8 @@ onMounted(async () => {
   await MedicoStore.cargarMedicos();
   await TiposPacientesStore.cargarPacientes(); // Asegúrate de tener este método en tu store
   await fichaIdentificacionStore.cargarDatos();
-  console.log("Médicos cargados:", medicos.value); // Verifica que los médicos están cargados
-  console.log("Tipos de pacientes cargados:", tpacientes.value); // Verifica que los tipos de pacientes están cargados
+  // console.log("Médicos cargados:", medicos.value); // Verifica que los médicos están cargados
+  // console.log("Tipos de pacientes cargados:", tpacientes.value); // Verifica que los tipos de pacientes están cargados
 });
 
 const pacientesConDetalles = computed(() => {
@@ -235,7 +235,7 @@ const pacientesConDetalles = computed(() => {
 watch(
   () => medicos.value,
   (newValue) => {
-    console.log("Médicos actualizados:", newValue);
+    // console.log("Médicos actualizados:", newValue);
     // Aquí puedes recargar datos en la tabla si es necesario
   }
 );

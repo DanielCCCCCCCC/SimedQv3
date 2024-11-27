@@ -1,146 +1,175 @@
+<!-- src/components/contactsForm.vue -->
 <template>
   <q-page class="q-pa-md flex flex-center">
-    <q-form
-      class="bg-grey-2 shadow-2 q-pa-md rounded-xl formS"
-      style="max-width: 600px; width: 100%"
-      @submit.prevent="guardarContacto"
-    >
-      <h1 class="text-h4 text-sky-500 text-center q-mb-md uppercase">
-        {{ isEditMode ? "Editar Contacto" : "Agregar Contacto" }}
-      </h1>
-
-      <div class="row q-col-gutter-sm">
-        <div class="col-12 col-md-3 flex flex-center">
-          <q-avatar color="blue" size="96px" class="form-avatar">
-            <q-icon name="person" size="48px" />
-          </q-avatar>
-        </div>
-        <div class="col-12 col-md-9">
-          <q-input
-            v-model="formData.nombreContacto"
-            label="Nombre"
-            outlined
-            dense
-          />
-          <q-input
-            v-model="formData.direccionContacto"
-            label="Dirección"
-            outlined
-            dense
+    <q-card class="shadow-2 rounded-borders form-card">
+      <q-card-section>
+        <div class="q-mb-md flex justify-between items-center">
+          <h2 class="text-h4 text-primary">
+            {{ isEditMode ? "Editar Contacto" : "Agregar Contacto" }}
+          </h2>
+          <q-btn
+            label="Volver al Listado"
+            color="secondary"
+            icon="arrow_back"
+            flat
+            @click="volverAlListado"
           />
         </div>
-      </div>
 
-      <div class="row q-mt-sm q-col-gutter-sm">
-        <div class="col-12 col-md-6">
-          <q-select
-            v-model="formData.grupoIdContacto"
-            :options="grupos"
-            label="Grupo"
-            option-value="id"
-            option-label="descripcion"
-            outlined
-            dense
-          />
-          <div class="col-12 col-md-6">
-            <q-input
-              v-model="formData.organizacionContacto"
-              label="Organizacion"
-              outlined
-              dense
+        <q-form @submit.prevent="guardarcontact">
+          <div class="row q-col-gutter-md">
+            <!-- Información Personal -->
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="formData.nombreContacto"
+                label="Nombre"
+                outlined
+                dense
+                required
+                class="q-mb-md"
+              />
+              <q-input
+                v-model="formData.direccionContacto"
+                label="Dirección"
+                outlined
+                dense
+                required
+                class="q-mb-md"
+              />
+              <q-select
+                v-model="formData.grupoIdContacto"
+                :options="grupos"
+                label="Grupo"
+                option-value="id"
+                option-label="descripcion"
+                outlined
+                dense
+                required
+                class="q-mb-md"
+              />
+              <q-input
+                v-model="formData.organizacionContacto"
+                label="Organización"
+                outlined
+                dense
+                class="q-mb-md"
+              />
+            </div>
+
+            <!-- Información de Ubicación -->
+            <div class="col-12 col-md-6">
+              <q-select
+                v-model="formData.departamentoIdContacto"
+                :options="departamentos"
+                label="Departamento"
+                option-value="id"
+                option-label="descripcion"
+                outlined
+                dense
+                @update:model-value="onDepartamentoChange"
+                required
+                class="q-mb-md"
+                :error="!!formErrors.departamentoIdContacto"
+                :error-message="formErrors.departamentoIdContacto"
+              />
+              <q-select
+                v-model="formData.municipioIdContacto"
+                :options="filteredMunicipios"
+                label="Municipio"
+                option-value="id"
+                option-label="descripcion"
+                outlined
+                dense
+                :disable="!formData.departamentoIdContacto"
+                required
+                class="q-mb-md"
+                :error="!!formErrors.municipioIdContacto"
+                :error-message="formErrors.municipioIdContacto"
+              />
+              <q-input
+                v-model="formData.emailContacto"
+                label="Email"
+                type="email"
+                outlined
+                dense
+                required
+                class="q-mb-md"
+                :error="!!formErrors.emailContacto"
+                :error-message="formErrors.emailContacto"
+              />
+            </div>
+          </div>
+
+          <div class="row q-col-gutter-md">
+            <!-- Información de Contacto -->
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="formData.telefonoCasaContacto"
+                label="Teléfono Casa"
+                outlined
+                mask="####-####"
+                dense
+                class="q-mb-md"
+                :error="!!formErrors.telefonoCasaContacto"
+                :error-message="formErrors.telefonoCasaContacto"
+              />
+              <q-input
+                v-model="formData.telefonoPersonalContacto"
+                label="Teléfono Personal"
+                outlined
+                mask="####-####"
+                dense
+                class="q-mb-md"
+                :error="!!formErrors.telefonoPersonalContacto"
+                :error-message="formErrors.telefonoPersonalContacto"
+              />
+            </div>
+
+            <!-- Observaciones -->
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="formData.observacionContacto"
+                label="Observación"
+                outlined
+                type="textarea"
+                dense
+                class="q-mb-md"
+                counter
+                maxlength="500"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-center q-mt-lg">
+            <q-btn
+              :label="isEditMode ? 'Actualizar Contacto' : 'Guardar Contacto'"
+              color="primary"
+              type="submit"
+              class="full-width"
+              unelevated
+              rounded
             />
           </div>
-        </div>
-
-        <div class="col-12 col-md-6">
-          <q-select
-            v-model="formData.departamentoIdContacto"
-            :options="departamentos"
-            label="Departamento"
-            option-value="id"
-            option-label="descripcion"
-            outlined
-            dense
-            @update:model-value="onDepartamentoChange"
-          />
-          <q-select
-            v-model="formData.municipioIdContacto"
-            :options="filteredMunicipios"
-            label="Municipio"
-            option-value="id"
-            option-label="descripcion"
-            outlined
-            dense
-            :disable="!formData.departamentoIdContacto"
-          />
-        </div>
-      </div>
-
-      <div class="row q-col-gutter-sm">
-        <div class="col-12 col-md-6">
-          <q-input
-            v-model="formData.emailContacto"
-            label="Email"
-            type="email"
-            outlined
-            dense
-          />
-        </div>
-        <div class="col-12 col-md-6">
-          <q-input
-            v-model="formData.telefonoCasaContacto"
-            label="Teléfono Casa"
-            outlined
-            mask="####-####"
-            dense
-          />
-        </div>
-        <div class="col-12 col-md-6">
-          <q-input
-            v-model="formData.observacionContacto"
-            label="Observacion"
-            outlined
-            type="textarea"
-            dense
-          />
-        </div>
-        <div class="col-12 col-md-6">
-          <q-input
-            v-model="formData.telefonoPersonalContacto"
-            label="Teléfono Personal"
-            outlined
-            mask="####-####"
-            dense
-          />
-        </div>
-      </div>
-
-      <div class="flex justify-center q-mt-sm">
-        <q-btn
-          :label="isEditMode ? 'Actualizar Contacto' : 'Guardar Contacto'"
-          color="primary"
-          type="submit"
-          class="full-width"
-        />
-      </div>
-    </q-form>
-    <div class="dataG">
-      <ListadoContactos @editarContacto="cargarContactoParaEditar" />
-    </div>
+        </q-form>
+      </q-card-section>
+    </q-card>
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import {
   useDepartamentoStore,
   useMunicipioStore,
 } from "../stores/DatosGeneralesStores";
 import { useGruposContactosStore } from "../stores/ConfiMedicasStores";
 import { useContactStore } from "../stores/ContacStores";
-import ListadoContactos from "./ListadoContactos.vue";
 import { Notify } from "quasar";
 import { storeToRefs } from "pinia";
+
+const route = useRoute();
+const router = useRouter();
 
 // Tiendas
 const departamentoStore = useDepartamentoStore();
@@ -151,16 +180,6 @@ const gruposContactosStore = useGruposContactosStore();
 const { grupos } = storeToRefs(gruposContactosStore);
 const { departamentos } = storeToRefs(departamentoStore);
 const { municipios } = storeToRefs(municipioStore);
-
-onMounted(async () => {
-  await gruposContactosStore.cargarGrupos();
-  await departamentoStore.cargarDepartamentos();
-  await municipioStore.cargarMunicipios();
-
-  // Depuración inicial para verificar datos cargados
-  console.log("Departamentos cargados:", departamentos.value);
-  console.log("Municipios cargados:", municipios.value);
-});
 
 // Datos del formulario
 const formData = ref({
@@ -175,160 +194,191 @@ const formData = ref({
   telefonoPersonalContacto: "",
   observacionContacto: "",
 });
-const isEditing = ref(false);
-let selectedContactoId = null;
 
-function cargarContactoParaEditar(contacto) {
-  console.log("Datos del contacto recibidos para edición:", contacto);
-  // Convertir especialidadId a número
-
-  // Encontrar el grupo
-  const grupo = grupos.value.find((grp) => grp.id === contacto.grupoIdContacto);
-
-  // Encontrar el departamento
-  const departamento = departamentos.value.find(
-    (dept) => dept.id === contacto.departamentoIdContacto
-  );
-
-  // Actualizar los municipios filtrados
-  if (departamento) {
-    onDepartamentoChange(departamento);
-  }
-
-  // Encontrar el municipio (después de actualizar los municipios filtrados)
-  const municipio = filteredMunicipios.value.find(
-    (mun) => mun.id === contacto.municipioIdContacto
-  );
-
-  // Actualizar el formulario
-  formData.value = {
-    nombreContacto: contacto.nombreContacto,
-    direccionContacto: contacto.direccionContacto,
-    organizacionContacto: contacto.organizacionContacto,
-    grupoIdContacto: grupo ? grupo : null,
-    departamentoIdContacto: departamento ? departamento : null,
-    municipioIdContacto: municipio ? municipio : null,
-    emailContacto: contacto.emailContacto,
-    telefonoCasaContacto: contacto.telefonoCasaContacto,
-    telefonoPersonalContacto: contacto.telefonoPersonalContacto,
-    observacionContacto: contacto.observacionContacto,
-  };
-  console.log("Grupo ID en contacto:", contacto.grupoIdContacto);
-  console.log("Lista de grupos:", grupos.value);
-
-  console.log("Municipio ID en contacto:", contacto.municipioIdContacto);
-  console.log("Lista de municipios filtrados:", filteredMunicipios.value);
-
-  // console.log("Datos del formulario con información cargada:", formData.value);
-
-  selectedContactId = contacto.id;
-  isEditMode.value = true;
-}
-
-// Computed para filtrar los municipios según el departamento seleccionado
-const filteredMunicipios = computed(() => {
-  if (!formData.value.departamentoIdContacto) return [];
-  const result = municipios.value.filter(
-    (municipio) =>
-      municipio.departamentoId === formData.value.departamentoIdContacto.id
-  );
-  console.log("Municipios filtrados:", result);
-  return result;
-});
-
-// Manejar el cambio de departamento
-function onDepartamentoChange(departamento) {
-  console.log("Departamento seleccionado:", departamento);
-  formData.value.departamentoIdContacto = departamento;
-  formData.value.municipioIdContacto = null; // Resetear el municipio al cambiar de departamento
-
-  // Filtrar los municipios correspondientes al departamento seleccionado
-  filteredMunicipios.value = municipios.value.filter(
-    (municipio) => municipio.departamentoId === departamento.id
-  );
-}
+// Manejo de errores (puedes implementar validaciones más robustas)
+const formErrors = ref({});
 
 // Modo edición
 const isEditMode = ref(false);
-let selectedContactId = null;
+const contactId = route.params.id || null;
 
-// Guardar o actualizar contacto
-async function guardarContacto() {
-  const contactoData = {
-    ...formData.value,
-    grupoIdContacto: formData.value.grupoIdContacto?.id,
-    departamentoIdContacto: formData.value.departamentoIdContacto?.id,
-    municipioIdContacto: formData.value.municipioIdContacto?.id,
-  };
+// Computed para filtrar los municipios según el departamento seleccionado
+const filteredMunicipios = computed(() => {
+  const deptId = Number(formData.value.departamentoIdContacto);
+  if (!deptId) return [];
+  return municipios.value.filter(
+    (municipio) => Number(municipio.departamentoId) === deptId
+  );
+});
 
-  console.log("Datos de contacto a guardar:", contactoData);
+// Manejar el cambio de departamento
+function onDepartamentoChange(departamentoId) {
+  formData.value.departamentoIdContacto = departamentoId;
+  formData.value.municipioIdContacto = null; // Resetear el municipio al cambiar de departamento
+}
+
+// Watchers para depuración (opcional)
+watch(
+  () => formData.value.departamentoIdContacto,
+  (newVal) => {
+    console.log("Departamento seleccionado:", newVal);
+  }
+);
+
+watch(filteredMunicipios, (newVal) => {
+  console.log("Municipios filtrados:", newVal);
+});
+
+// Cargar datos del médico si es edición
+onMounted(async () => {
+  await gruposContactosStore.cargarGrupos();
+  await departamentoStore.cargarDepartamentos();
+  await municipioStore.cargarMunicipios();
+
+  console.log("Grupos cargados:", grupos.value);
+  console.log("Departamentos cargados:", departamentos.value);
+  console.log("Municipios cargados:", municipios.value);
+
+  if (contactId) {
+    isEditMode.value = true;
+    try {
+      const contact = await contactStore.obtenerContactoPorId(contactId);
+      if (contact) {
+        formData.value = {
+          nombreContacto: contact.nombreContacto,
+          direccionContacto: contact.direccionContacto,
+          organizacionContacto: contact.organizacionContacto,
+          grupoIdContacto: contact.grupoIdContacto,
+          departamentoIdContacto: contact.departamentoIdContacto,
+          municipioIdContacto: contact.municipioIdContacto,
+          emailContacto: contact.emailContacto,
+          telefonoCasaContacto: contact.telefonoCasaContacto,
+          telefonoPersonalContacto: contact.telefonoPersonalContacto,
+          observacionContacto: contact.observacionContacto,
+        };
+      } else {
+        Notify.create({
+          message: "Médico no encontrado",
+          color: "negative",
+          position: "top-right",
+        });
+        router.push({ name: "contactsList" });
+      }
+    } catch (error) {
+      console.error("Error al obtener médico:", error);
+      Notify.create({
+        message: "Error al cargar el médico",
+        color: "negative",
+        position: "top-right",
+      });
+      router.push({ name: "contactsList" });
+    }
+  }
+});
+
+// Función para guardar o actualizar el médico
+async function guardarcontact() {
+  const contactData = { ...formData.value };
+
+  // Opcional: Implementar validaciones antes de guardar
+  formErrors.value = {}; // Resetear errores
+
+  if (!contactData.nombreContacto) {
+    formErrors.value.nombreContacto = "El nombre es obligatorio.";
+  }
+  if (!contactData.direccionContacto) {
+    formErrors.value.direccionContacto = "La dirección es obligatoria.";
+  }
+  if (!contactData.grupoIdContacto) {
+    formErrors.value.grupoIdContacto = "El grupo es obligatorio.";
+  }
+  if (!contactData.departamentoIdContacto) {
+    formErrors.value.departamentoIdContacto = "El departamento es obligatorio.";
+  }
+  if (!contactData.municipioIdContacto) {
+    formErrors.value.municipioIdContacto = "El municipio es obligatorio.";
+  }
+  if (!contactData.emailContacto) {
+    formErrors.value.emailContacto = "El email es obligatorio.";
+  }
+  // Agrega más validaciones según sea necesario
+
+  // Verificar si hay errores
+  if (Object.keys(formErrors.value).length > 0) {
+    Notify.create({
+      message: "Por favor, corrige los errores en el formulario.",
+      color: "negative",
+      position: "top-right",
+    });
+    return;
+  }
 
   try {
     if (isEditMode.value) {
-      await contactStore.actualizarContacto({
-        id: selectedContactId,
-        ...contactoData,
-      });
+      await contactStore.actualizarContacto(contactId, contactData);
       Notify.create({
-        message: "Contacto actualizado exitosamente",
+        message: "Médico actualizado exitosamente",
         color: "positive",
         position: "top-right",
       });
     } else {
-      await contactStore.agregarContacto(contactoData);
+      await contactStore.agregarContacto(contactData);
       Notify.create({
-        message: "Contacto guardado exitosamente",
+        message: "Médico agregado exitosamente",
         color: "positive",
         position: "top-right",
       });
     }
-    resetFormulario();
+    router.push({ name: "contactsList" });
   } catch (error) {
-    console.error("Error al guardar contacto:", error);
+    console.error("Error al guardar médico:", error);
     Notify.create({
-      message: "Hubo un error al guardar el contacto",
+      message: "Hubo un error al guardar el médico",
       color: "negative",
       position: "top-right",
     });
   }
 }
 
-// Resetear formulario
-function resetFormulario() {
-  formData.value = {
-    nombreContacto: "",
-    direccionContacto: "",
-    organizacionContacto: "",
-
-    grupoIdContacto: null,
-    departamentoIdContacto: null,
-    municipioIdContacto: null,
-    emailContacto: "",
-    telefonoCasaContacto: "",
-    telefonoPersonalContacto: "",
-    observacionContacto: "",
-  };
-  isEditMode.value = false;
-  selectedContactId = null;
+// Función para volver al listado
+function volverAlListado() {
+  router.push({ name: "contactsList" });
 }
 </script>
 
 <style scoped>
-.formS {
-  border-radius: 20px;
+.form-card {
+  max-width: 800px; /* Aumenta el ancho máximo del formulario */
+  width: 100%;
+  margin: auto; /* Centra el card */
+  background-color: #ffffff; /* Fondo blanco para mejor legibilidad */
 }
 
-.q-mb-sm {
-  margin-bottom: 1em;
+.text-primary {
+  color: #1976d2 !important; /* Color primario de Quasar */
 }
 
-.dataG {
-  margin-top: -20px;
+.form-card h2 {
+  font-weight: bold;
 }
-.formS {
-  border-top-left-radius: 40px;
-  border-top-right-radius: 15px;
-  border-bottom-right-radius: 40px;
-  border-bottom-left-radius: 25px;
+
+.q-btn.flat.round {
+  border-radius: 50%;
+}
+
+.q-card-section {
+  padding: 24px;
+}
+
+@media (max-width: 1024px) {
+  .form-card {
+    max-width: 700px;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-card {
+    max-width: 100%;
+  }
 }
 </style>

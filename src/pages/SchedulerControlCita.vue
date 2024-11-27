@@ -1,8 +1,5 @@
 <template>
   <div class="scheduler-container">
-    <CitasAgendadas />
-  </div>
-  <div class="scheduler-container">
     <DxScheduler
       :data-source="computedAppointments"
       :current-view="currentView"

@@ -1,30 +1,62 @@
-// fichaIdentificacionStores.js
-
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { supabase } from "../supabaseClient"; // Asegúrate de tener configurado supabaseClient
 import { parseISO, format, startOfMonth, endOfMonth } from "date-fns"; // Asegúrate de importar parseISO
 import { es } from "date-fns/locale";
+import { useAuthStore } from "./auth"; // Importa el authStore
 
 export const useFichaIdentificacionStore = defineStore(
   "fichaIdentificacion",
   () => {
     const formIdentificacion = ref([]);
-    const tenantId = "a780935f-76e7-46c7-98a3-b4c3ab9bb2c3"; // Reemplaza con tu tenant ID
+    const authStore = useAuthStore();
+
+    // Computed para obtener tenantId y userId reactivamente
+    const tenantId = computed(() => authStore?.tenant_Id);
+    const userId = computed(() => authStore?.user_id); // Obtener user_id desde authStore
+
+    // Verificar que tenantId y userId son válidos
+    watch([tenantId, userId], ([newTenantId, newUserId]) => {
+      console.log(
+        "Depuración watch - tenantId:",
+        newTenantId,
+        "userId:",
+        newUserId
+      );
+      if (!newTenantId) {
+        console.error("No se ha proporcionado un tenant_Id válido.");
+      }
+      if (!newUserId) {
+        console.error("No se ha proporcionado un user_id válido.");
+      }
+    });
 
     // Función para cargar datos desde Supabase
     const cargarDatos = async () => {
+      console.log(
+        "Cargando datos con tenantId:",
+        tenantId.value,
+        "y userId:",
+        userId.value
+      );
+      if (!tenantId.value) {
+        console.log(
+          "No se ha proporcionado un tenant_Id válido. " + tenantId.value
+        );
+        return;
+      }
+
       const { data, error } = await supabase
         .from("fichaIdentificacion")
         .select("*")
-        .eq("tenant_id", tenantId)
+        .eq("tenant_Id", tenantId.value)
         .order("created_at", { ascending: true });
 
       if (error) {
         console.error("Error al cargar los datos de identificación:", error);
       } else {
+        console.log("Datos cargados:", data);
         // Convertir IDs a números si es necesario = solo lo hago para confirmar que son numeros los IDs
-
         formIdentificacion.value = (data || []).map((paciente) => ({
           ...paciente,
           tipoId: Number(paciente.tipoId),
@@ -41,21 +73,36 @@ export const useFichaIdentificacionStore = defineStore(
 
     // Función para guardar un nuevo paciente
     const guardarDatos = async (nuevoFormulario) => {
-      const fechaRegistro = new Date().toISOString(); // Usar formato ISO para fechas
+      console.log(
+        "Guardando datos con tenantId:",
+        tenantId.value,
+        "y userId:",
+        userId.value
+      );
+      if (!tenantId.value || !userId.value) {
+        console.error("No se ha proporcionado un tenant_Id o user_id válido.");
+        return null;
+      }
+
+      const fechaRegistro = new Date().toISOString();
       const { data, error } = await supabase
         .from("fichaIdentificacion")
-        .insert([{ ...nuevoFormulario, fechaRegistro, tenant_id: tenantId }])
-        .select(); // Seleccionar para obtener el registro insertado
-      console.log(nuevoFormulario);
+        .insert([
+          {
+            ...nuevoFormulario,
+            fechaRegistro,
+            tenant_Id: tenantId.value,
+            user_id: userId.value, // Usar userId del authStore
+          },
+        ])
+        .select();
+
       if (error) {
         console.error("Error al guardar los datos de identificación:", error);
         return null;
-      } else if (data && data.length > 0) {
-        formIdentificacion.value.push(data[0]);
-        return data[0];
       } else {
-        console.warn("Paciente guardado, pero sin datos devueltos.");
-        return null;
+        console.log("Datos guardados exitosamente:", data);
+        return data;
       }
     };
 
@@ -65,7 +112,17 @@ export const useFichaIdentificacionStore = defineStore(
         console.error("Error: el ID del paciente es indefinido.");
         return false;
       }
+      if (!tenantId.value) {
+        console.error("No se ha proporcionado un tenant_Id válido.");
+        return false;
+      }
       try {
+        console.log(
+          "Actualizando paciente con tenantId:",
+          tenantId.value,
+          "y userId:",
+          userId.value
+        );
         const { data, error } = await supabase
           .from("fichaIdentificacion")
           .update({
@@ -98,7 +155,7 @@ export const useFichaIdentificacionStore = defineStore(
             // Agrega otros campos necesarios si existen
           })
           .eq("id", pacienteActualizado.id)
-          .eq("tenant_id", tenantId) // Asegura que solo actualizas del tenant actual
+          .eq("tenant_Id", tenantId.value) // Asegura que solo actualizas del tenant actual
           .select(); // Seleccionar para obtener el registro actualizado
 
         if (error) {
@@ -128,11 +185,22 @@ export const useFichaIdentificacionStore = defineStore(
 
     // Función para eliminar un paciente
     const eliminarPaciente = async (id) => {
+      console.log(
+        "Eliminando paciente con ID:",
+        id,
+        "y tenantId:",
+        tenantId.value
+      );
+      if (!tenantId.value) {
+        console.error("No se ha proporcionado un tenant_Id válido.");
+        return false;
+      }
+
       const { error } = await supabase
         .from("fichaIdentificacion")
         .delete()
         .eq("id", id)
-        .eq("tenant_id", tenantId); // Asegura que solo eliminas del tenant actual
+        .eq("tenant_Id", tenantId.value); // Asegura que solo eliminas del tenant actual
 
       if (error) {
         console.error("Error al eliminar el paciente:", error);
@@ -202,6 +270,19 @@ export const useFichaIdentificacionStore = defineStore(
       { estado: "Activos", cantidad: totalActivos.value },
       { estado: "Inactivos", cantidad: totalInactivos.value },
     ]);
+
+    // Watcher para cargar datos cuando cambia el tenantId
+    watch(
+      tenantId,
+      (newTenantId) => {
+        if (newTenantId) {
+          cargarDatos();
+        } else {
+          formIdentificacion.value = []; // Limpiar datos si no hay tenantId
+        }
+      },
+      { immediate: true }
+    );
 
     return {
       formIdentificacion,

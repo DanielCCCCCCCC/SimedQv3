@@ -1,15 +1,11 @@
 <template>
   <div class="scheduler-container">
-    <CitasAgendadas />
-  </div>
-
-  <div class="scheduler-container">
     <DxScheduler
       :data-source="computedAppointments"
       :current-view="currentView"
       :current-date="currentDate"
       :time-zone="'America/Tegucigalpa'"
-      :height="650"
+      :height="800"
       :cell-duration="30"
       :start-day-hour="0"
       :end-day-hour="24"
@@ -169,7 +165,7 @@ const medicosConEspecialidad = computed(() => {
 // Fecha y vista del Scheduler
 const appointments = computed(() => appointmentsStore.appointments);
 const currentDate = ref(new Date());
-const currentView = ref("month");
+const currentView = ref("day");
 const views = ["day", "week", "workWeek", "month", "agenda"];
 
 // Computed property para concatenar título y nombre del paciente
@@ -463,6 +459,21 @@ const onAppointmentAdded = async (e) => {
       throw new Error("Médico no seleccionado.");
     }
 
+    // Validar `tenant_Id` y `user_id`
+    const { useAuthStore } = await import("../stores/auth");
+    const authStore = useAuthStore();
+    const tenantId = authStore.tenant_Id;
+    const userId = authStore.user?.id;
+
+    if (!tenantId || !userId) {
+      Notify.create({
+        message: "No se encontraron datos de usuario o tenant.",
+        color: "negative",
+        position: "top-right",
+      });
+      throw new Error("tenant_Id o user_id faltante.");
+    }
+
     // Preparar nueva cita con fechas formateadas
     const newAppointment = {
       title: appointmentData.title || appointmentData.text,
@@ -731,16 +742,39 @@ const onDoctorSelected = (e) => {
 // Cargar datos al montar el componente
 onMounted(async () => {
   try {
-    isPacientesLoading.value = true; // Si tienes una variable para cargar pacientes
-    await appointmentsStore.fetchAppointments();
-    await especialidadMedicaStore.cargarEspecialidades(); // Cargar especialidades primero
-    await medicoStore.cargarMedicos(); // Luego cargar médicos
+    const { useAuthStore } = await import("../stores/auth");
+    const authStore = useAuthStore();
+
+    await authStore.initialize();
+
+    // Verifica que 'user' no sea null o undefined
+    if (!authStore?.user) {
+      throw new Error("El usuario no está autenticado.");
+    }
+
+    const tenantId = authStore?.tenant_Id;
+    const userId = authStore?.user?.id;
+
+    console.log("Linea 753 el tenant_Id " + tenantId);
+    console.log("Linea 754 el userId " + userId);
+
+    if (!tenantId) {
+      Notify.create({
+        message: "No se encontraron datos de usuario o tenant.",
+        color: "negative",
+        position: "top-right",
+      });
+      throw new Error("tenant_Id o user_id faltante.");
+    }
+
+    // Continuar con la carga de datos
+    await appointmentsStore.fetchAppointments(); // Cargar citas
+    await especialidadMedicaStore.cargarEspecialidades();
+    await medicoStore.cargarMedicos();
     await tiposCitasStore.cargarCitas();
     await fichaIdentificacionStore.cargarDatos();
-    console.log("Datos de pacientes cargados:", formIdentificacion.value);
-    console.log("Especialidades cargadas:", especialidades.value);
-    console.log("Médicos cargados:", medicos.value);
-    console.log("Médicos con especialidad:", medicosConEspecialidad.value); // Log de médicos con especialidad
+
+    console.log("Datos iniciales cargados correctamente.");
   } catch (error) {
     console.error("Error al cargar datos iniciales:", error);
     Notify.create({
@@ -751,14 +785,14 @@ onMounted(async () => {
   } finally {
     isMedicosLoading.value = false;
     isEspecialidadesLoading.value = false;
-    isPacientesLoading.value = false; // Finalizar la carga de pacientes si se inició
+    isPacientesLoading.value = false;
   }
 });
 </script>
 
 <style scoped>
 .scheduler-container {
-  background-color: #f9fafc;
+  background-color: #ffffff;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);

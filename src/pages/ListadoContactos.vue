@@ -29,7 +29,7 @@
   </div>
 
   <!-- DataGrid para pantallas grandes -->
-  <div v-else id="app-container" class="q-mb-xl q-px-md q-pa-xs q-py-md">
+  <div v-else id="app-container" class="q-mb-xl q-px-xl q-pa-xs q-py-md">
     <DxDataGrid
       :data-source="contactosConDetalles"
       :allow-column-reordering="true"
@@ -243,8 +243,10 @@ const handleDelete = async (contactoId) => {
 #app-container {
   padding: 0 4px;
   background-color: #ffffff;
-  margin-top: -20px;
-  margin-bottom: 80px;
+  /* margin-top: -20px; */
+  /* margin-bottom: 20px; */
+  margin-left: 50px;
+  margin-right: 50px;
 }
 
 .header-title {
@@ -252,7 +254,8 @@ const handleDelete = async (contactoId) => {
   font-weight: bold;
   color: #333;
   text-align: center;
-  margin-bottom: -10px;
+  margin-bottom: 10px;
+  background-color: #ffffff;
 }
 
 /* Vista de tarjetas en dispositivos móviles */
@@ -261,6 +264,7 @@ const handleDelete = async (contactoId) => {
   flex-direction: column;
   gap: 16px;
   padding: 16px;
+  background-color: #333;
 }
 
 .contact-card {

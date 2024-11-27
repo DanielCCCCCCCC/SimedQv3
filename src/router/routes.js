@@ -1,13 +1,15 @@
 import FormContactos from "../pages/FormContactos.vue";
-import ListadoMedicos from "src/pages/ListadoMedicos.vue";
-import FormDiagnosticos from "src/pages/FormDiagnosticos.vue";
-import FormConfiMedicas from "src/pages/FormConfiMedicas.vue";
-import FormDirectorios from "src/pages/FormDirectorios.vue";
-import FormDirectorioPacientes from "src/pages/FormDirectorioPacientes.vue";
-import SchedulerControlCita from "src/pages/SchedulerControlCita.vue";
-import SchedulerControlCitaCopy from "src/pages/SchedulerControlCitacopy.vue";
-import FormDatosGenerales from "src/pages/FormDatosGenerales.vue";
-import FormMedicos from "src/pages/FormMedicos.vue";
+import ListadoMedicos from "../pages/ListadoMedicos.vue";
+import FormDiagnosticos from "../pages/FormDiagnosticos.vue";
+import FormConfiMedicas from "../pages/FormConfiMedicas.vue";
+import FormDirectorios from "../pages/FormDirectorios.vue";
+import FormDirectorioPacientes from "../pages/FormDirectorioPacientes.vue";
+import SchedulerControlCita from "../pages/SchedulerControlCita.vue";
+import SchedulerControlCitaCopy from "../pages/SchedulerControlCitacopy.vue";
+import FormDatosGenerales from "../pages/FormDatosGenerales.vue";
+import FormMedicos from "../pages/FormMedicos.vue";
+import DashboardIndicadores from "../pages/DashboardIndicadores.vue";
+import ListadoContactos from "src/pages/ListadoContactos.vue";
 const routes = [
   {
     path: "/",
@@ -15,9 +17,9 @@ const routes = [
     children: [
       { path: "", component: () => import("pages/IndexPage.vue") },
       {
-        path: "controlCitas",
-        component: SchedulerControlCita,
-        name: "controlCitas",
+        path: "dashboard",
+        component: DashboardIndicadores,
+        name: "dashboard",
       },
       {
         path: "controlCitasv2",
@@ -29,6 +31,12 @@ const routes = [
         component: FormContactos,
         name: "contactos",
       },
+      {
+        path: "ListadoContactos",
+        component: ListadoContactos,
+        name: "ListadoContactos",
+      },
+
       { path: "medicos", component: FormMedicos, name: "medicos" },
       { path: "listamedicos", component: ListadoMedicos, name: "listamedicos" },
       {
@@ -56,21 +64,6 @@ const routes = [
         component: FormDatosGenerales,
         name: "datosGenerales",
       },
-      // {
-      //   path: "grupSanguineo",
-      //   component: FormGrupoSanguineo,
-      //   name: "grupSanguineo",
-      // },
-      // {
-      //   path: "escolaridad",
-      //   component: FormEscolaridad,
-      //   name: "escolaridad",
-      // },
-      // {
-      //   path: "estadoCivil",
-      //   component: FormEstadoCivil,
-      //   name: "estadoCivil",
-      // },
     ],
   },
 

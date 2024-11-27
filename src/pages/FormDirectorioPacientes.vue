@@ -1,14 +1,4 @@
 <template>
-  <div class="row q-col-gutter-md">
-    <!-- Gráficos ajustados para pantallas pequeñas -->
-    <div class="col-12 col-md-4">
-      <PacienteActivoGraph class="grafico-responsivo" />
-    </div>
-    <div class="col-12 col-md-4">
-      <PacientesAggMensualmente class="grafico-responsivo" />
-    </div>
-  </div>
-
   <q-page class="q-pa-md">
     <!-- Barra de pestañas principales -->
     <q-tabs
@@ -625,7 +615,7 @@ const guardarDatosFormulario = () => {
       alergias: pacienteSeleccionado.alergias,
       vih: pacienteSeleccionado.vih ?? false, // Nuevo campo
 
-      tenant_id: pacienteSeleccionado.tenant_id,
+      tenant_Id: pacienteSeleccionado.tenant_id,
     });
   } else {
     // Crear un nuevo paciente si no hay id
@@ -675,7 +665,7 @@ const guardarDatosFormulario = () => {
       alergias: pacienteSeleccionado.alergias,
       vih: pacienteSeleccionado.vih ?? false, // Nuevo campo
 
-      tenant_id: pacienteSeleccionado.tenant_id,
+      tenant_Id: pacienteSeleccionado.tenant_id,
     });
   }
 
